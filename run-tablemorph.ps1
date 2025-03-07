@@ -7,14 +7,26 @@
 .DESCRIPTION
     This script launches the TableMorph application, installing Java if needed.
     It will attempt to bypass PowerShell execution policy restrictions automatically.
+.PARAMETER AdminMode
+    Indicates that the script is running with administrative privileges
 .NOTES
     If you're seeing execution policy errors, try running this script using one of these methods:
-    1. Right-click the script and select "Run with PowerShell"
+    1. Right-click the script and select "Run with PowerShell as Administrator"
     2. Open PowerShell as Administrator and run: 
        powershell -ExecutionPolicy Bypass -File path\to\run-tablemorph.ps1
-    3. Temporarily change the execution policy:
-       Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+    3. Use the run-tablemorph-powershell.bat file which will request admin privileges
 #>
+
+param (
+    [switch]$AdminMode
+)
+
+# Check if running as administrator
+function Test-Administrator {
+    $user = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal $user
+    return $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
 
 # Self-elevate and bypass execution policy if needed
 if ($MyInvocation.Line -notlike "*-ExecutionPolicy Bypass*") {
@@ -28,7 +40,7 @@ if ($MyInvocation.Line -notlike "*-ExecutionPolicy Bypass*") {
         Write-Host "Could not automatically bypass execution policy. Please run this script using one of these methods:" -ForegroundColor Yellow
         Write-Host "1. Right-click the script and select 'Run with PowerShell'" -ForegroundColor Yellow
         Write-Host "2. Open PowerShell as Administrator and run: powershell -ExecutionPolicy Bypass -File path\to\run-tablemorph.ps1" -ForegroundColor Yellow
-        Write-Host "3. Temporarily change the execution policy: Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force" -ForegroundColor Yellow
+        Write-Host "3. Use the run-tablemorph-powershell.bat file which will request admin privileges" -ForegroundColor Yellow
         Read-Host "Press Enter to exit"
         exit
     }
@@ -139,9 +151,26 @@ Write-Host "$BLUE║          TableMorph Launcher - PowerShell                  
 Write-Host "$BLUE╚════════════════════════════════════════════════════════════╝$NC"
 Write-Host ""
 
+# Check admin status and warn if not running as admin
+$isAdmin = Test-Administrator
+if (-not $isAdmin -and -not $AdminMode) {
+    Write-Host "${YELLOW}Warning: Not running with administrative privileges.${NC}"
+    Write-Host "${YELLOW}Java installation may fail. If it does, please run the script as administrator.${NC}"
+    Write-Host "${YELLOW}You can use the run-tablemorph-powershell.bat file which will request admin privileges.${NC}"
+    Write-Host ""
+}
+
 # Function to install Java
 function Install-Java {
     Write-Host "${YELLOW}Attempting to install Java automatically...$NC"
+    
+    # Check if running as administrator for installation
+    $isAdmin = Test-Administrator
+    if (-not $isAdmin -and -not $AdminMode) {
+        Write-Host "${RED}Warning: Not running with administrative privileges.${NC}"
+        Write-Host "${YELLOW}Java installation may fail. Continuing anyway...${NC}"
+        Write-Host ""
+    }
     
     # Create temp directory for downloads
     $tempDir = Join-Path -Path $PSScriptRoot -ChildPath "temp"
@@ -278,7 +307,17 @@ function Install-Java {
             Get-Content -Path $logFile | Select-Object -Last 20
         }
         
-        Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
+        # Provide specific guidance for non-admin installation failures
+        if (-not $isAdmin -and -not $AdminMode) {
+            Write-Host "${RED}Installation failed likely due to insufficient privileges.${NC}"
+            Write-Host "${YELLOW}Please try again using one of these methods:${NC}"
+            Write-Host "1. Use the run-tablemorph-powershell.bat file which will request admin privileges"
+            Write-Host "2. Right-click on run-tablemorph.ps1 and select 'Run as administrator'"
+            Write-Host "3. Install Java manually from: https://adoptium.net/"
+        } else {
+            Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
+        }
+        
         # Don't remove the temp directory so the log file can be examined
         Read-Host "Press Enter to exit"
         exit 1
