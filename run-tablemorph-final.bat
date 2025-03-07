@@ -34,12 +34,16 @@ echo.
 echo Running with administrative privileges.
 echo.
 
+goto :CheckJava
+
+:CheckJava
 :: Check if Java is installed
 echo Checking Java installation...
 java -version >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo Java not found! Installing Java...
     call :InstallJava
+    goto :CheckJava
 ) else (
     :: Check Java version - capture output to a temporary file
     java -version 2>&1 | findstr /i "version" > java_version.tmp
@@ -71,11 +75,14 @@ if %ERRORLEVEL% NEQ 0 (
         echo Java version !JAVA_VERSION! is too old. Java 8 or higher is required.
         echo Installing Java 17...
         call :InstallJava
+        goto :CheckJava
     ) else (
         echo Java !JAVA_VERSION! detected!
+        goto :BuildAndLaunch
     )
 )
 
+:BuildAndLaunch
 :: Check if the JAR file exists, build if not
 echo Checking for JAR file...
 set JAR_PATH=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar
@@ -286,4 +293,4 @@ exit /b 0
     :: Now that Java is installed successfully, clean up the temp directory
     rmdir /s /q temp
 
-    goto :eof 
+    exit /b 0 
