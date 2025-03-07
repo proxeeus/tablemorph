@@ -116,8 +116,8 @@ public class TableMorph {
             System.out.println("║  3. 📦 Batch Generate Wavetables   ║");
             System.out.println("║  4. 🧪 Batch Morph Wavetables      ║");
             System.out.println("║  5. ℹ️ Wavetable Info             ║");
-            System.out.println("║  6. 🧙 Configuration               ║");
-            System.out.println("║  7. 👋 Quit                        ║");
+            System.out.println("║  6. 🧙Configuration               ║");
+            System.out.println("║  7. 👋Quit                        ║");
             System.out.println("╚════════════════════════════════════╝");
             System.out.print("Enter your choice > ");
             
