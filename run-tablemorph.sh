@@ -14,9 +14,10 @@ echo "║            TableMorph Launcher - macOS/Linux               ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Check if running with sudo/root and warn if not
+# Check if running with sudo/root and warn if needed, but don't require it
 if [ "$EUID" -ne 0 ]; then
-    echo -e "${YELLOW}Note: Not running with root privileges. Some installation steps may require your password.${NC}"
+    echo -e "${YELLOW}Note: Not running with root privileges. Some installation steps may require your password if needed.${NC}"
+    echo -e "${YELLOW}If you experience permission issues, you can run the script with sudo.${NC}"
     echo
 fi
 
@@ -112,7 +113,7 @@ install_java() {
                 sudo apt install -y openjdk-17-jdk &
                 display_spinner $! "Installing OpenJDK 17"
                 ;;
-            *Fedora*|*Red Hat*|*CentOS*)
+            *Fedora*|"Red Hat"*|*CentOS*)
                 echo -e "${YELLOW}Installing Java on Fedora/RHEL/CentOS...${NC}"
                 sudo dnf install -y java-17-openjdk &
                 display_spinner $! "Installing OpenJDK 17"
