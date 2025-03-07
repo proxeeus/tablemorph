@@ -115,9 +115,9 @@ public class TableMorph {
             System.out.println("║  2. 🧬 Morph with Samples          ║");
             System.out.println("║  3. 📦 Batch Generate Wavetables   ║");
             System.out.println("║  4. 🧪 Batch Morph Wavetables      ║");
-            System.out.println("║  5. ℹ️  Wavetable Info              ║");
-            System.out.println("║  6. 🧙  Configuration               ║");
-            System.out.println("║  7. 👋  Quit                        ║");
+            System.out.println("║  5. ℹ️  Wavetable Info             ║");
+            System.out.println("║  6. 🧙 Configuration               ║");
+            System.out.println("║  7. 👋 Quit                        ║");
             System.out.println("╚════════════════════════════════════╝");
             System.out.print("Enter your choice > ");
             
@@ -455,13 +455,42 @@ public class TableMorph {
         System.out.println("║  • Complex modulation with multiple carriers                  ║");
         System.out.println("║  • Spectral morphing waveforms                                ║");
         System.out.println("║                                                               ║");
-        System.out.println("║ Standard directory: " + wavetableGenerator.getWavetableDirectoryPath());
-        System.out.println("║ Samples directory: " + new File(SOUNDS_DIRECTORY).getAbsolutePath());
-        System.out.println("║ Morphs directory: " + new File(MORPHS_DIRECTORY).getAbsolutePath());
+
+        // Format directory paths to ensure they fit within the box width
+        String wavetableDirPath = wavetableGenerator.getWavetableDirectoryPath();
+        String soundsDirPath = new File(SOUNDS_DIRECTORY).getAbsolutePath();
+        String morphsDirPath = new File(MORPHS_DIRECTORY).getAbsolutePath();
+
+        // Ensure formatting will work by limiting path length if needed
+        int maxPathLength = 50; // Maximum characters that can fit in the line
+        if (wavetableDirPath.length() > maxPathLength) {
+            wavetableDirPath = "..." + wavetableDirPath.substring(wavetableDirPath.length() - maxPathLength + 3);
+        }
+        if (soundsDirPath.length() > maxPathLength) {
+            soundsDirPath = "..." + soundsDirPath.substring(soundsDirPath.length() - maxPathLength + 3);
+        }
+        if (morphsDirPath.length() > maxPathLength) {
+            morphsDirPath = "..." + morphsDirPath.substring(morphsDirPath.length() - maxPathLength + 3);
+        }
+
+        System.out.println("║ Standard directory: " + wavetableDirPath + getSpaces(maxPathLength - wavetableDirPath.length()) + " ║");
+        System.out.println("║ Samples directory: " + soundsDirPath + getSpaces(maxPathLength - soundsDirPath.length() + 1) + " ║");
+        System.out.println("║ Morphs directory: " + morphsDirPath + getSpaces(maxPathLength - morphsDirPath.length() + 2) + " ║");
         System.out.println("╚═══════════════════════════════════════════════════════════════╝");
         
         System.out.println("\nPress Enter to continue...");
         scanner.nextLine();
+    }
+    
+    /**
+     * Helper method to generate spaces for proper alignment
+     */
+    private static String getSpaces(int count) {
+        StringBuilder spaces = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            spaces.append(" ");
+        }
+        return spaces.toString();
     }
     
     /**
