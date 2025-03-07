@@ -16,14 +16,8 @@ if "%version%" == "10.0" (
     set "COLORED=no"
 )
 
-:: Print header
-echo.
-if "%COLORED%" == "yes" echo %BLUE%
-echo ********************************************************
-echo *            TableMorph Launcher - Windows             *
-echo ********************************************************
-if "%COLORED%" == "yes" echo %NC%
-echo.
+:: Call the check_java function at the beginning
+goto :check_java
 
 :: Function to install Java
 :install_java
@@ -43,11 +37,26 @@ if "%COLORED%" == "yes" echo %NC%
 :: Determine system architecture
 reg Query "HKLM\Hardware\Description\System\CentralProcessor\0" | find /i "x86" > NUL && set ARCH=x86 || set ARCH=x64
 
-:: Download appropriate installer
+:: Set the download URL based on architecture
 if "%ARCH%" == "x64" (
-    powershell -Command "Invoke-WebRequest -Uri 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.8_7.msi' -OutFile 'java_installer.msi'"
+    set "DOWNLOAD_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%%2B7/OpenJDK17U-jdk_x64_windows_hotspot_17.0.8_7.msi"
 ) else (
-    powershell -Command "Invoke-WebRequest -Uri 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.8_7.msi' -OutFile 'java_installer.msi'"
+    set "DOWNLOAD_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%%2B7/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.8_7.msi"
+)
+
+:: Try using bitsadmin (more reliable than PowerShell on some systems)
+bitsadmin /transfer JavaDownload /download /priority normal "%DOWNLOAD_URL%" "%CD%\java_installer.msi" > nul
+
+:: If bitsadmin fails, try using certutil as a fallback
+if not exist "java_installer.msi" (
+    echo Trying alternative download method...
+    certutil -urlcache -split -f "%DOWNLOAD_URL%" java_installer.msi > nul
+)
+
+:: If both methods fail, try PowerShell as a last resort
+if not exist "java_installer.msi" (
+    echo Trying PowerShell download method...
+    powershell -Command "(New-Object System.Net.WebClient).DownloadFile('%DOWNLOAD_URL%', 'java_installer.msi')"
 )
 
 :: Check if download was successful
@@ -123,6 +132,15 @@ goto :continue_after_java
 
 :: Check if Java is installed and has the correct version
 :check_java
+:: Print header
+echo.
+if "%COLORED%" == "yes" echo %BLUE%
+echo ********************************************************
+echo *            TableMorph Launcher - Windows             *
+echo ********************************************************
+if "%COLORED%" == "yes" echo %NC%
+echo.
+
 if "%COLORED%" == "yes" echo %YELLOW%
 echo Checking Java installation...
 if "%COLORED%" == "yes" echo %NC%
@@ -228,7 +246,4 @@ echo Launching TableMorph...
 if "%COLORED%" == "yes" echo %NC%
 java -jar "%JAR_FILE%"
 
-endlocal
-
-:: Call the check_java function at the beginning
-goto :check_java 
+endlocal 

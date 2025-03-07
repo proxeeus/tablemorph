@@ -1,4 +1,6 @@
 # TableMorph Launcher - PowerShell Edition
+# To run this script, you may need to set the execution policy:
+# Open PowerShell as Administrator and run: Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 
 # ANSI color codes
 $GREEN = "`e[0;32m"
@@ -19,7 +21,7 @@ function Install-Java {
     Write-Host "${YELLOW}Attempting to install Java automatically...$NC"
     
     # Create temp directory for downloads
-    $tempDir = "temp"
+    $tempDir = Join-Path -Path $PSScriptRoot -ChildPath "temp"
     if (-not (Test-Path -Path $tempDir -PathType Container)) {
         New-Item -Path $tempDir -ItemType Directory | Out-Null
     }
@@ -37,18 +39,51 @@ function Install-Java {
     
     $installerPath = Join-Path -Path $tempDir -ChildPath "java_installer.msi"
     
-    try {
-        Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
-    } catch {
-        Write-Host "${RED}Error: Failed to download Java installer.$NC"
-        Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
-        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-        Read-Host "Press Enter to exit"
-        exit 1
+    # Try multiple download methods
+    $downloadSuccess = $false
+    
+    # Method 1: .NET WebClient (works on older PowerShell versions)
+    if (-not $downloadSuccess) {
+        try {
+            Write-Host "Trying WebClient download method..."
+            $webClient = New-Object System.Net.WebClient
+            $webClient.DownloadFile($installerUrl, $installerPath)
+            if (Test-Path -Path $installerPath -PathType Leaf) {
+                $downloadSuccess = $true
+            }
+        } catch {
+            Write-Host "WebClient download failed. Trying another method..."
+        }
+    }
+    
+    # Method 2: Invoke-WebRequest (PowerShell 3.0+)
+    if (-not $downloadSuccess) {
+        try {
+            Write-Host "Trying Invoke-WebRequest download method..."
+            Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath -UseBasicParsing
+            if (Test-Path -Path $installerPath -PathType Leaf) {
+                $downloadSuccess = $true
+            }
+        } catch {
+            Write-Host "Invoke-WebRequest download failed. Trying another method..."
+        }
+    }
+    
+    # Method 3: BITS Transfer (Windows only)
+    if (-not $downloadSuccess) {
+        try {
+            Write-Host "Trying BITS transfer download method..."
+            Start-BitsTransfer -Source $installerUrl -Destination $installerPath
+            if (Test-Path -Path $installerPath -PathType Leaf) {
+                $downloadSuccess = $true
+            }
+        } catch {
+            Write-Host "BITS transfer download failed."
+        }
     }
     
     # Check if download was successful
-    if (-not (Test-Path -Path $installerPath -PathType Leaf)) {
+    if (-not (Test-Path -Path $installerPath -PathType Leaf) -or -not $downloadSuccess) {
         Write-Host "${RED}Error: Failed to download Java installer.$NC"
         Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
         Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -58,7 +93,18 @@ function Install-Java {
     
     # Install Java silently
     Write-Host "${YELLOW}Installing Java 17...$NC"
-    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i", $installerPath, "/quiet", "/qn", "/norestart" -Wait
+    try {
+        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/qn", "/norestart" -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            throw "MSI installer returned exit code: $($process.ExitCode)"
+        }
+    } catch {
+        Write-Host "${RED}Error during Java installation: $_$NC"
+        Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
+        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
     
     # Clean up
     Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -69,31 +115,44 @@ function Install-Java {
     # Update PATH to include Java
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     
+    # Add potential Java paths
+    $javaLocations = @(
+        "${env:ProgramFiles}\Eclipse Adoptium\jdk-17.0.8.7-hotspot\bin",
+        "${env:ProgramFiles(x86)}\Eclipse Adoptium\jdk-17.0.8.7-hotspot\bin"
+    )
+    
+    foreach ($location in $javaLocations) {
+        if (Test-Path -Path $location) {
+            $env:Path += ";$location"
+        }
+    }
+    
     # Check if Java is now installed
     try {
-        $javaVersion = (Get-Command java -ErrorAction Stop | Select-Object -ExpandProperty Version).Major
+        $javaInfo = Get-Command java -ErrorAction Stop
+        $javaPath = $javaInfo.Source
+        Write-Host "Java found at: $javaPath"
         
-        # Handle different version formats
-        if ($javaVersion -eq 1) {
-            # For Java 1.8 style version
-            $versionOutput = java -version 2>&1
-            if ($versionOutput -match "version `"(\d+)\.(\d+)") {
-                if ($Matches[1] -eq "1") {
-                    $javaVersion = $Matches[2]
-                }
+        $versionOutput = & java -version 2>&1
+        $versionString = $versionOutput -join "`n"
+        Write-Host "Java version output: $versionString"
+        
+        if ($versionString -match "version `"(\d+)\.(\d+)") {
+            $majorVersion = if ($Matches[1] -eq "1") { $Matches[2] } else { $Matches[1] }
+            
+            if ([int]$majorVersion -lt 8) {
+                Write-Host "${RED}Error: Java installation failed or version is still too old.$NC"
+                Write-Host "${YELLOW}Please install Java 8 or higher manually from: https://adoptium.net/$NC"
+                Read-Host "Press Enter to exit"
+                exit 1
             }
+            
+            Write-Host "${GREEN}Java $majorVersion installed successfully!$NC"
+        } else {
+            throw "Could not parse Java version"
         }
-        
-        if ($javaVersion -lt 8) {
-            Write-Host "${RED}Error: Java installation failed or version is still too old.$NC"
-            Write-Host "${YELLOW}Please install Java 8 or higher manually from: https://adoptium.net/$NC"
-            Read-Host "Press Enter to exit"
-            exit 1
-        }
-        
-        Write-Host "${GREEN}Java $javaVersion installed successfully!$NC"
     } catch {
-        Write-Host "${RED}Error: Java installation failed.$NC"
+        Write-Host "${RED}Error: Java installation failed: $_$NC"
         Write-Host "${YELLOW}Please install Java manually from: https://adoptium.net/$NC"
         Read-Host "Press Enter to exit"
         exit 1
@@ -103,37 +162,38 @@ function Install-Java {
 # Check if Java is installed and has the correct version
 Write-Host "${YELLOW}Checking Java installation...$NC"
 try {
-    $javaVersion = (Get-Command java -ErrorAction Stop | Select-Object -ExpandProperty Version).Major
+    $javaInfo = Get-Command java -ErrorAction Stop
+    $javaPath = $javaInfo.Source
+    Write-Host "Java found at: $javaPath"
     
-    # Handle different version formats
-    if ($javaVersion -eq 1) {
-        # For Java 1.8 style version
-        $versionOutput = java -version 2>&1
-        if ($versionOutput -match "version `"(\d+)\.(\d+)") {
-            if ($Matches[1] -eq "1") {
-                $javaVersion = $Matches[2]
+    $versionOutput = & java -version 2>&1
+    $versionString = $versionOutput -join "`n"
+    Write-Host "Java version output: $versionString"
+    
+    if ($versionString -match "version `"(\d+)\.(\d+)") {
+        $majorVersion = if ($Matches[1] -eq "1") { $Matches[2] } else { $Matches[1] }
+        
+        if ([int]$majorVersion -lt 8) {
+            Write-Host "${YELLOW}Java version $majorVersion is too old. Java 8 or higher is required.$NC"
+            $installJava = Read-Host "Would you like to install Java 17 automatically? (Y/N)"
+            if ($installJava -eq "Y" -or $installJava -eq "y") {
+                Install-Java
+            } else {
+                Write-Host "${RED}Error: Java 8 or higher is required. Found version: $majorVersion$NC"
+                Write-Host "${YELLOW}Please install Java 8 or higher to run TableMorph.$NC"
+                Write-Host "${YELLOW}You can download it from: https://adoptium.net/$NC"
+                Write-Host ""
+                Read-Host "Press Enter to exit"
+                exit 1
             }
-        }
-    }
-    
-    if ($javaVersion -lt 8) {
-        Write-Host "${YELLOW}Java version $javaVersion is too old. Java 8 or higher is required.$NC"
-        $installJava = Read-Host "Would you like to install Java 17 automatically? (Y/N)"
-        if ($installJava -eq "Y" -or $installJava -eq "y") {
-            Install-Java
         } else {
-            Write-Host "${RED}Error: Java 8 or higher is required. Found version: $javaVersion$NC"
-            Write-Host "${YELLOW}Please install Java 8 or higher to run TableMorph.$NC"
-            Write-Host "${YELLOW}You can download it from: https://adoptium.net/$NC"
-            Write-Host ""
-            Read-Host "Press Enter to exit"
-            exit 1
+            Write-Host "${GREEN}Java $majorVersion detected!$NC"
         }
     } else {
-        Write-Host "${GREEN}Java $javaVersion detected!$NC"
+        throw "Could not parse Java version"
     }
 } catch {
-    Write-Host "${YELLOW}Java not found!$NC"
+    Write-Host "${YELLOW}Java not found! Error: $_$NC"
     $installJava = Read-Host "Would you like to install Java 17 automatically? (Y/N)"
     if ($installJava -eq "Y" -or $installJava -eq "y") {
         Install-Java
@@ -155,13 +215,16 @@ if (-not (Test-Path -Path "wavetables" -PathType Container)) {
 }
 
 # Check if the JAR file exists, build if not
-$jarFile = "target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+$jarFile = Join-Path -Path $PSScriptRoot -ChildPath "target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
 if (-not (Test-Path -Path $jarFile -PathType Leaf)) {
     Write-Host "${YELLOW}Building TableMorph...$NC"
     
     # Check if Maven Wrapper exists
-    if (Test-Path -Path "mvnw.cmd" -PathType Leaf) {
-        & .\mvnw.cmd clean package assembly:single
+    $mvnwPath = Join-Path -Path $PSScriptRoot -ChildPath "mvnw.cmd"
+    if (Test-Path -Path $mvnwPath -PathType Leaf) {
+        Push-Location $PSScriptRoot
+        & $mvnwPath clean package assembly:single
+        Pop-Location
         
         if (-not (Test-Path -Path $jarFile -PathType Leaf)) {
             Write-Host "${RED}Error: Build failed!$NC"
@@ -171,7 +234,7 @@ if (-not (Test-Path -Path $jarFile -PathType Leaf)) {
         
         Write-Host "${GREEN}TableMorph built successfully!$NC"
     } else {
-        Write-Host "${RED}Error: Maven Wrapper (mvnw.cmd) not found!$NC"
+        Write-Host "${RED}Error: Maven Wrapper (mvnw.cmd) not found at $mvnwPath!$NC"
         Write-Host "${YELLOW}Please ensure you've cloned the complete repository.$NC"
         Read-Host "Press Enter to exit"
         exit 1
@@ -180,4 +243,10 @@ if (-not (Test-Path -Path $jarFile -PathType Leaf)) {
 
 # Launch the application
 Write-Host "${YELLOW}Launching TableMorph...$NC"
-java -jar $jarFile 
+try {
+    & java -jar $jarFile
+} catch {
+    Write-Host "${RED}Error launching TableMorph: $_$NC"
+    Read-Host "Press Enter to exit"
+    exit 1
+} 
