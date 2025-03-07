@@ -176,45 +176,16 @@ exit /b 0
     set "timestamp=%timestamp: =0%"
     set "log_file=install_log_%timestamp%.txt"
 
-    :: Start the installation in the background
-    start /b "" msiexec /i java_installer.msi /quiet /qn /norestart /log "%log_file%"
+    :: Create a marker file to track installation start time
+    echo %time% > install_start.txt
 
-    :: Get the PID of the msiexec process
-    for /f "tokens=2" %%a in ('tasklist ^| findstr /i "msiexec"') do (
-        set "msi_pid=%%a"
-        goto :got_pid
-    )
-    :got_pid
+    :: Start the installation
+    echo Installing Java...
+    msiexec /i java_installer.msi /quiet /qn /norestart /log "%log_file%"
 
-    :: Display a spinner while waiting for installation to complete
-    echo Installing Java 
-    :spinner
-    set /a count+=1
-    set /a index=count %% 4
-    set "c=!anim:~%index%,1!"
-    <nul set /p =!c!
-    <nul set /p =^H
-    
-    :: Check if our specific msiexec process is still running
-    tasklist | find /i "%msi_pid%" >nul
-    if errorlevel 1 (
-        :: Process no longer running, installation complete
-        echo Installation complete!
-        goto :install_complete
-    )
-    
-    :: Add a timeout to prevent infinite loop
-    set /a timeout=count / 60
-    if !timeout! GTR 10 (
-        echo Installation is taking longer than expected. Continuing...
-        goto :install_complete
-    )
-    
-    :: Still running, continue spinner
-    ping -n 2 127.0.0.1 >nul
-    goto spinner
+    :: Installation is complete at this point
+    echo Installation complete!
 
-:install_complete
     :: Wait a bit to ensure installation is fully complete
     ping -n 5 127.0.0.1 >nul
 
