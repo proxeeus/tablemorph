@@ -140,7 +140,7 @@ exit /b 0
     )
 
     :: Create a simple progress animation for download
-    set "anim=|/-\"
+    set "anim=-\|/"
     set count=0
 
     :: Start the download in the background
@@ -166,7 +166,7 @@ exit /b 0
                 if errorlevel 1 (
                     :: Download complete
                     echo Download complete!
-                    goto download_complete
+                    goto :download_complete
                 )
             )
         )
