@@ -14,15 +14,40 @@ echo "║            TableMorph Launcher - macOS/Linux               ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
+# Check if running with sudo/root and warn if not
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${YELLOW}Note: Not running with root privileges. Some installation steps may require your password.${NC}"
+    echo
+fi
+
+# Function to display a spinner during a time-consuming process
+display_spinner() {
+    local pid=$1
+    local message=$2
+    local spin='-\|/'
+    local i=0
+    
+    echo -ne "${YELLOW}$message ${NC}"
+    
+    while kill -0 $pid 2>/dev/null; do
+        i=$(( (i+1) % 4 ))
+        echo -ne "\r${YELLOW}$message [${spin:$i:1}]${NC}"
+        sleep 0.5
+    done
+    
+    echo -e "\r${GREEN}$message [Done]${NC}"
+}
+
 # Function to install Java
 install_java() {
-    echo -e "${YELLOW}Java not found or version too old. Attempting to install Java 17...${NC}"
+    echo -e "${YELLOW}Java not found or version too old. Installing Java 17...${NC}"
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS installation using Homebrew
         if command -v brew >/dev/null 2>&1; then
             echo -e "${YELLOW}Installing Java using Homebrew...${NC}"
-            brew install openjdk@17
+            brew install openjdk@17 &
+            display_spinner $! "Installing Java 17 via Homebrew"
             
             # Create symlink to make Java available
             if [ -d "/opt/homebrew/opt/openjdk@17/bin" ]; then
@@ -36,7 +61,8 @@ install_java() {
             fi
         else
             echo -e "${YELLOW}Homebrew not found. Installing Homebrew first...${NC}"
-            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" &
+            display_spinner $! "Installing Homebrew"
             
             # Add Homebrew to PATH
             if [[ $(uname -m) == 'arm64' ]]; then
@@ -48,7 +74,9 @@ install_java() {
             fi
             
             # Now install Java
-            brew install openjdk@17
+            echo -e "${YELLOW}Installing Java using Homebrew...${NC}"
+            brew install openjdk@17 &
+            display_spinner $! "Installing Java 17 via Homebrew"
             
             # Create symlink to make Java available
             if [ -d "/opt/homebrew/opt/openjdk@17/bin" ]; then
@@ -79,16 +107,20 @@ install_java() {
         case $OS in
             *Ubuntu*|*Debian*)
                 echo -e "${YELLOW}Installing Java on Ubuntu/Debian...${NC}"
-                sudo apt update
-                sudo apt install -y openjdk-17-jdk
+                sudo apt update & 
+                display_spinner $! "Updating package lists"
+                sudo apt install -y openjdk-17-jdk &
+                display_spinner $! "Installing OpenJDK 17"
                 ;;
             *Fedora*|*Red Hat*|*CentOS*)
                 echo -e "${YELLOW}Installing Java on Fedora/RHEL/CentOS...${NC}"
-                sudo dnf install -y java-17-openjdk
+                sudo dnf install -y java-17-openjdk &
+                display_spinner $! "Installing OpenJDK 17"
                 ;;
             *Arch*)
                 echo -e "${YELLOW}Installing Java on Arch Linux...${NC}"
-                sudo pacman -Sy jdk17-openjdk
+                sudo pacman -Sy jdk17-openjdk &
+                display_spinner $! "Installing OpenJDK 17"
                 ;;
             *)
                 echo -e "${RED}Unsupported Linux distribution: $OS${NC}"
@@ -124,63 +156,59 @@ if command -v java >/dev/null 2>&1; then
     JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | sed 's/^1\.//' | cut -d'.' -f1)
     if [ "$JAVA_VERSION" -lt 8 ]; then
         echo -e "${YELLOW}Java version $JAVA_VERSION is too old. Java 8 or higher is required.${NC}"
-        read -p "Would you like to install Java 17 automatically? (y/n): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            install_java
-        else
-            echo -e "${YELLOW}Please install Java 8 or higher manually and try again.${NC}"
-            exit 1
-        fi
+        install_java
     else
         echo -e "${GREEN}Java $JAVA_VERSION detected!${NC}"
     fi
 else
     echo -e "${YELLOW}Java not found!${NC}"
-    read -p "Would you like to install Java 17 automatically? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        install_java
-    else
-        echo -e "${YELLOW}Please install Java 8 or higher manually and try again.${NC}"
-        
-        # Suggest installation commands based on OS
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            echo -e "${YELLOW}For macOS, you can install Java using Homebrew:${NC}"
-            echo "  brew install openjdk@17"
-        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            echo -e "${YELLOW}For Ubuntu/Debian, you can install Java using:${NC}"
-            echo "  sudo apt update && sudo apt install openjdk-17-jdk"
-            echo -e "${YELLOW}For Fedora/RHEL/CentOS:${NC}"
-            echo "  sudo dnf install java-17-openjdk"
-        fi
-        
-        exit 1
-    fi
+    install_java
 fi
 
-# Create wavetables directory if it doesn't exist
-if [ ! -d "wavetables" ]; then
-    echo -e "${YELLOW}Creating wavetables directory...${NC}"
-    mkdir -p wavetables
-    echo -e "${GREEN}Wavetables directory created!${NC}"
+# Define target directory and JAR file path
+TARGET_DIR="target"
+JAR_NAME="tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+JAR_PATH="$TARGET_DIR/$JAR_NAME"
+
+# Create target directory if it doesn't exist
+if [ ! -d "$TARGET_DIR" ]; then
+    echo -e "${YELLOW}Creating target directory...${NC}"
+    mkdir -p "$TARGET_DIR"
+    echo -e "${GREEN}Target directory created!${NC}"
 fi
 
 # Check if the JAR file exists, build if not
-JAR_FILE="target/tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
-if [ ! -f "$JAR_FILE" ]; then
-    echo -e "${YELLOW}Building TableMorph...${NC}"
+if [ ! -f "$JAR_PATH" ]; then
+    echo -e "${YELLOW}JAR file not found. Building TableMorph...${NC}"
+    
+    # Check if Maven wrapper exists
+    if [ ! -f "./mvnw" ]; then
+        echo -e "${RED}Error: Maven wrapper (mvnw) not found!${NC}"
+        echo -e "${YELLOW}Please ensure you've cloned the complete repository.${NC}"
+        exit 1
+    fi
     
     # Check if mvnw is executable, make it executable if not
     if [ ! -x "./mvnw" ]; then
+        echo -e "${YELLOW}Making Maven wrapper executable...${NC}"
         chmod +x ./mvnw
     fi
     
     # Build the project using Maven Wrapper
+    echo -e "${YELLOW}Running Maven build...${NC}"
     ./mvnw clean package assembly:single
     
-    if [ ! -f "$JAR_FILE" ]; then
-        echo -e "${RED}Error: Build failed!${NC}"
+    # Check if build was successful
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error: Maven build failed!${NC}"
+        echo -e "${YELLOW}Please check the build output for errors.${NC}"
+        exit 1
+    fi
+    
+    # Verify JAR was created
+    if [ ! -f "$JAR_PATH" ]; then
+        echo -e "${RED}Error: Build completed but JAR file was not created.${NC}"
+        echo -e "${YELLOW}Please check the build output for errors.${NC}"
         exit 1
     fi
     
@@ -188,5 +216,17 @@ if [ ! -f "$JAR_FILE" ]; then
 fi
 
 # Launch the application
+echo
 echo -e "${YELLOW}Launching TableMorph...${NC}"
-java -jar "$JAR_FILE" 
+java -jar "$JAR_PATH"
+
+# Check if application launched successfully
+if [ $? -ne 0 ]; then
+    echo
+    echo -e "${RED}Error: Failed to launch TableMorph.${NC}"
+    echo
+    exit 1
+fi
+
+# Exit with success
+exit 0 
