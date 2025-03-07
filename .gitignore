@@ -1,0 +1,52 @@
+# Maven build artifacts
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Generated wavetables and morphs
+wavetables/*.wav
+morphs/*.wav
+
+# Sample files (can be large)
+sounds/*.wav
+sounds/*.mp3
+sounds/*.aiff
+sounds/*.flac
+
+# Configuration file (contains user-specific paths)
+tablemorph_config.properties
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+*.sublime-workspace
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Logs
+*.log
+log/
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties 
