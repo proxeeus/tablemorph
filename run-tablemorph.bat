@@ -181,14 +181,15 @@ exit /b 0
     start /b cmd /c bitsadmin /transfer JavaDownload /download /priority high "%DOWNLOAD_URL%" "%CD%\java_installer.msi" ^> nul
 
     :: Display a spinner while waiting for download to complete
-    echo [    ] 
+    echo Download progress: 
 
 :download_spinner
     set /a count+=1
     set /a index=count %% 4
     set "c=!anim:~%index%,1!"
-    <nul set /p =!c!
-    <nul set /p =^H
+    <nul set /p =[!c!]
+    ping -n 2 127.0.0.1 >nul
+    <nul set /p =^H^H^H
     
     :: Check if the file exists and has a size greater than 0
     if exist "java_installer.msi" (
@@ -206,7 +207,6 @@ exit /b 0
     )
     
     :: Still downloading, continue spinner
-    ping -n 2 127.0.0.1 >nul
     goto download_spinner
 
 :download_complete
