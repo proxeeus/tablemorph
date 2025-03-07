@@ -98,7 +98,7 @@ if not exist "!JAR_PATH!" (
         echo Running Maven build...
         call mvnw.cmd clean package assembly:single
         
-        if not exist "%JAR_PATH%" (
+        if not exist "!JAR_PATH!" (
             echo Error: Build failed! JAR file not created.
             echo Please check the build output for errors.
             pause
@@ -117,8 +117,8 @@ if not exist "!JAR_PATH!" (
 :: Launch the application
 echo.
 echo Launching TableMorph...
-java -jar "%JAR_PATH%"
-if %ERRORLEVEL% NEQ 0 (
+java -jar "!JAR_PATH!"
+if !ERRORLEVEL! NEQ 0 (
     echo.
     echo Error: Failed to launch TableMorph.
     echo.
