@@ -110,12 +110,44 @@ exit /b 0
         set "DOWNLOAD_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%%2B7/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.8_7.msi"
     )
 
-    :: Download using BITS (built into Windows)
-    echo Downloading Java installer with BITS...
-    echo [    0%%] Initializing download...
-    bitsadmin /transfer JavaDownload /download /priority high "%DOWNLOAD_URL%" "%CD%\java_installer.msi" > nul
+    :: Create a simple progress animation for download
+    set "anim=|/-\"
+    set count=0
 
-    :: If BITS fails, try using certutil as a fallback
+    :: Start the download in the background
+    echo Downloading Java installer...
+    start /b cmd /c bitsadmin /transfer JavaDownload /download /priority high "%DOWNLOAD_URL%" "%CD%\java_installer.msi" ^> nul
+
+    :: Display a spinner while waiting for download to complete
+    echo [    ] 
+    :download_spinner
+    set /a count+=1
+    set /a index=count %% 4
+    set "c=!anim:~%index%,1!"
+    <nul set /p =!c!
+    <nul set /p =^H
+    
+    :: Check if the file exists and has a size greater than 0
+    if exist "java_installer.msi" (
+        for %%F in (java_installer.msi) do (
+            if %%~zF GTR 0 (
+                :: Check if bitsadmin is still running
+                tasklist | find /i "bitsadmin" >nul
+                if errorlevel 1 (
+                    :: Download complete
+                    echo Download complete!
+                    goto :download_complete
+                )
+            )
+        )
+    )
+    
+    :: Still downloading, continue spinner
+    ping -n 2 127.0.0.1 >nul
+    goto download_spinner
+
+:download_complete
+    :: If the download failed, try using certutil as a fallback
     if not exist "java_installer.msi" (
         echo Trying alternative download method with certutil...
         echo This may take a few minutes. Please wait...
@@ -130,20 +162,29 @@ exit /b 0
         cd ..
         pause
         exit /b 1
-    ) else (
-        echo Download complete!
     )
 
     :: Install Java silently with progress display
     echo Installing Java 17...
     echo This may take a few minutes. Please wait...
 
-    :: Create a simple progress animation
-    set "anim=|/-\"
+    :: Reset the animation counter
     set count=0
 
+    :: Create a unique log file name with timestamp
+    set "timestamp=%date:~-4,4%%date:~-7,2%%date:~-10,2%_%time:~0,2%%time:~3,2%%time:~6,2%"
+    set "timestamp=%timestamp: =0%"
+    set "log_file=install_log_%timestamp%.txt"
+
     :: Start the installation in the background
-    start /b "" msiexec /i java_installer.msi /quiet /qn /norestart /log install_log.txt
+    start /b "" msiexec /i java_installer.msi /quiet /qn /norestart /log "%log_file%"
+
+    :: Get the PID of the msiexec process
+    for /f "tokens=2" %%a in ('tasklist ^| findstr /i "msiexec"') do (
+        set "msi_pid=%%a"
+        goto :got_pid
+    )
+    :got_pid
 
     :: Display a spinner while waiting for installation to complete
     echo Installing Java 
@@ -153,25 +194,34 @@ exit /b 0
     set "c=!anim:~%index%,1!"
     <nul set /p =!c!
     <nul set /p =^H
-    :: Check if msiexec is still running
-    tasklist | find /i "msiexec" >nul
-    if not errorlevel 1 (
-        :: Still running, continue spinner
-        ping -n 2 127.0.0.1 >nul
-        goto spinner
-    ) else (
-        :: Installation complete
+    
+    :: Check if our specific msiexec process is still running
+    tasklist | find /i "%msi_pid%" >nul
+    if errorlevel 1 (
+        :: Process no longer running, installation complete
         echo Installation complete!
+        goto :install_complete
     )
+    
+    :: Add a timeout to prevent infinite loop
+    set /a timeout=count / 60
+    if !timeout! GTR 10 (
+        echo Installation is taking longer than expected. Continuing...
+        goto :install_complete
+    )
+    
+    :: Still running, continue spinner
+    ping -n 2 127.0.0.1 >nul
+    goto spinner
 
+:install_complete
     :: Wait a bit to ensure installation is fully complete
     ping -n 5 127.0.0.1 >nul
 
     :: Clean up but keep the installer for troubleshooting if needed
     echo Cleaning up temporary files...
     cd ..
-    if exist "temp\install_log.txt" type temp\install_log.txt
-    :: Don't delete the temp folder immediately in case we need to debug
+    if exist "temp\%log_file%" type "temp\%log_file%"
 
     :: Verify Java installation
     echo Verifying Java installation...
@@ -186,9 +236,9 @@ exit /b 0
         echo Error: Java installation failed.
         echo Checking installation log for errors...
         
-        if exist "temp\install_log.txt" (
+        if exist "temp\%log_file%" (
             echo Installation log contents:
-            type temp\install_log.txt
+            type "temp\%log_file%"
         )
         
         echo Please install Java manually from: https://adoptium.net/
