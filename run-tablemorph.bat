@@ -76,10 +76,39 @@ if %ERRORLEVEL% NEQ 0 (
     )
 )
 
+:: Check if the JAR file exists, build if not
+set JAR_FILE=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar
+if not exist "%JAR_FILE%" (
+    echo JAR file not found. Building TableMorph...
+    
+    :: Check if Maven wrapper exists
+    if exist "mvnw.cmd" (
+        :: Make sure the Maven wrapper is executable
+        attrib -R mvnw.cmd
+        
+        :: Build the project using Maven wrapper
+        call mvnw.cmd clean package assembly:single
+        
+        if not exist "%JAR_FILE%" (
+            echo Error: Build failed! JAR file not created.
+            echo Please check the build output for errors.
+            pause
+            exit /b 1
+        )
+        
+        echo TableMorph built successfully!
+    ) else (
+        echo Error: Maven wrapper (mvnw.cmd) not found!
+        echo Please ensure you've cloned the complete repository.
+        pause
+        exit /b 1
+    )
+)
+
 :: Launch the application
 echo.
 echo Launching TableMorph...
-java -jar "target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+java -jar "%JAR_FILE%"
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo Error: Failed to launch TableMorph.
