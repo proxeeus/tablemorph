@@ -41,26 +41,38 @@ if %ERRORLEVEL% NEQ 0 (
     echo Java not found! Installing Java...
     call :InstallJava
 ) else (
-    :: Check Java version
-    for /f tokens^=3^ delims^=.^"^  %%j in ('java -version 2^>^&1 ^| findstr /i "version"') do (
-        set JAVA_VERSION=%%j
-    )
-
-    :: Handle "1.8" style version
-    for /f tokens^=1^ delims^=. %%v in ("%JAVA_VERSION%") do (
-        if "%%v" == "1" (
-            for /f tokens^=2^ delims^=. %%w in ("%JAVA_VERSION%") do (
-                set JAVA_VERSION=%%w
+    :: Check Java version - capture output to a temporary file
+    java -version 2>&1 | findstr /i "version" > java_version.tmp
+    
+    :: Read the version from the temporary file
+    set JAVA_VERSION=0
+    for /f "tokens=3 delims=. " %%j in (java_version.tmp) do (
+        set JAVA_VERSION_STR=%%j
+        :: Remove quotes
+        set JAVA_VERSION_STR=!JAVA_VERSION_STR:"=!
+        
+        :: Check if it's a 1.x version
+        if "!JAVA_VERSION_STR:~0,2!" == "1." (
+            :: Extract the number after 1.
+            set JAVA_VERSION=!JAVA_VERSION_STR:~2,1!
+        ) else (
+            :: Modern version format
+            for /f "delims=." %%v in ("!JAVA_VERSION_STR!") do (
+                set JAVA_VERSION=%%v
             )
         )
     )
-
-    if %JAVA_VERSION% LSS 8 (
-        echo Java version %JAVA_VERSION% is too old. Java 8 or higher is required.
+    
+    :: Clean up temporary file
+    del java_version.tmp
+    
+    :: Check if version is less than 8
+    if !JAVA_VERSION! LSS 8 (
+        echo Java version !JAVA_VERSION! is too old. Java 8 or higher is required.
         echo Installing Java 17...
         call :InstallJava
     ) else (
-        echo Java %JAVA_VERSION% detected!
+        echo Java !JAVA_VERSION! detected!
     )
 )
 
@@ -215,28 +227,39 @@ exit /b 0
         exit /b 1
     )
 
-    :: Check Java version
-    for /f tokens^=3^ delims^=.^"^  %%j in ('java -version 2^>^&1 ^| findstr /i "version"') do (
-        set JAVA_VERSION=%%j
-    )
-
-    :: Handle "1.8" style version
-    for /f tokens^=1^ delims^=. %%v in ("%JAVA_VERSION%") do (
-        if "%%v" == "1" (
-            for /f tokens^=2^ delims^=. %%w in ("%JAVA_VERSION%") do (
-                set JAVA_VERSION=%%w
+    :: Check Java version using the same method as above
+    java -version 2>&1 | findstr /i "version" > java_version.tmp
+    
+    :: Read the version from the temporary file
+    set JAVA_VERSION=0
+    for /f "tokens=3 delims=. " %%j in (java_version.tmp) do (
+        set JAVA_VERSION_STR=%%j
+        :: Remove quotes
+        set JAVA_VERSION_STR=!JAVA_VERSION_STR:"=!
+        
+        :: Check if it's a 1.x version
+        if "!JAVA_VERSION_STR:~0,2!" == "1." (
+            :: Extract the number after 1.
+            set JAVA_VERSION=!JAVA_VERSION_STR:~2,1!
+        ) else (
+            :: Modern version format
+            for /f "delims=." %%v in ("!JAVA_VERSION_STR!") do (
+                set JAVA_VERSION=%%v
             )
         )
     )
+    
+    :: Clean up temporary file
+    del java_version.tmp
 
-    if %JAVA_VERSION% LSS 8 (
+    if !JAVA_VERSION! LSS 8 (
         echo Error: Java installation failed or version is still too old.
         echo Please install Java manually from: https://adoptium.net/
         pause
         exit /b 1
     )
 
-    echo Java %JAVA_VERSION% installed successfully!
+    echo Java !JAVA_VERSION! installed successfully!
 
     :: Now that Java is installed successfully, clean up the temp directory
     rmdir /s /q temp
