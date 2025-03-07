@@ -85,8 +85,14 @@ if %ERRORLEVEL% NEQ 0 (
 :BuildAndLaunch
 :: Check if the JAR file exists, build if not
 echo Checking for JAR file...
-set "JAR_PATH=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
-if not exist "!JAR_PATH!" (
+set "TARGET_DIR=target"
+set "JAR_NAME=tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+
+if not exist "%TARGET_DIR%" (
+    mkdir "%TARGET_DIR%"
+)
+
+if not exist "%TARGET_DIR%\%JAR_NAME%" (
     echo JAR file not found. Building TableMorph...
     
     :: Check if Maven wrapper exists
@@ -98,7 +104,7 @@ if not exist "!JAR_PATH!" (
         echo Running Maven build...
         call mvnw.cmd clean package assembly:single
         
-        if not exist "!JAR_PATH!" (
+        if not exist "%TARGET_DIR%\%JAR_NAME%" (
             echo Error: Build failed! JAR file not created.
             echo Please check the build output for errors.
             pause
@@ -117,7 +123,7 @@ if not exist "!JAR_PATH!" (
 :: Launch the application
 echo.
 echo Launching TableMorph...
-java -jar "!JAR_PATH!"
+java -jar "%TARGET_DIR%\%JAR_NAME%"
 if !ERRORLEVEL! NEQ 0 (
     echo.
     echo Error: Failed to launch TableMorph.
