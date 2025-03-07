@@ -85,8 +85,8 @@ if %ERRORLEVEL% NEQ 0 (
 :BuildAndLaunch
 :: Check if the JAR file exists, build if not
 echo Checking for JAR file...
-set JAR_PATH=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar
-if not exist "%JAR_PATH%" (
+set "JAR_PATH=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+if not exist "!JAR_PATH!" (
     echo JAR file not found. Building TableMorph...
     
     :: Check if Maven wrapper exists
