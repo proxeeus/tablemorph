@@ -109,15 +109,15 @@ public class TableMorph {
     private static void displayMenu() {
         while (true) {
             System.out.println("\n╔════════════════════════════════════╗");
-            System.out.println("║            MAIN MENU              ║");
+            System.out.println("║            MAIN MENU               ║");
             System.out.println("╠════════════════════════════════════╣");
             System.out.println("║  1. 🎵 Generate Wavetable          ║");
             System.out.println("║  2. 🧬 Morph with Samples          ║");
             System.out.println("║  3. 📦 Batch Generate Wavetables   ║");
             System.out.println("║  4. 🧪 Batch Morph Wavetables      ║");
-            System.out.println("║  5. ℹ️ Wavetable Info             ║");
-            System.out.println("║  6. 🧙Configuration               ║");
-            System.out.println("║  7. 👋Quit                        ║");
+            System.out.println("║  5. ℹ️ Wavetable Info              ║");
+            System.out.println("║  6. 🧙 Configuration               ║");
+            System.out.println("║  7. 👋 Quit                        ║");
             System.out.println("╚════════════════════════════════════╝");
             System.out.print("Enter your choice > ");
             
