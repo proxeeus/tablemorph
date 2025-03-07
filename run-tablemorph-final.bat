@@ -7,7 +7,7 @@ setlocal EnableDelayedExpansion
 
 :: Check for admin rights and self-elevate if needed
 >nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
-if '%errorlevel%' NEQ '0' (
+if errorlevel 1 (
     echo Requesting administrative privileges...
     echo This is needed to install Java properly.
     goto UACPrompt
@@ -40,7 +40,7 @@ goto :CheckJava
 :: Check if Java is installed
 echo Checking Java installation...
 java -version >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
+if errorlevel 1 (
     echo Java not found! Installing Java...
     call :InstallJava
     goto :CheckJava
@@ -88,43 +88,46 @@ echo Checking for JAR file...
 set "TARGET_DIR=target"
 set "JAR_NAME=tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
 
-if not exist "%TARGET_DIR%" (
-    mkdir "%TARGET_DIR%"
-)
+if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
 
 if not exist "%TARGET_DIR%\%JAR_NAME%" (
     echo JAR file not found. Building TableMorph...
     
-    :: Check if Maven wrapper exists
-    if exist "mvnw.cmd" (
-        :: Make sure the Maven wrapper is executable
-        attrib -R mvnw.cmd
-        
-        :: Build the project using Maven wrapper
-        echo Running Maven build...
-        call mvnw.cmd clean package assembly:single
-        
-        if not exist "%TARGET_DIR%\%JAR_NAME%" (
-            echo Error: Build failed! JAR file not created.
-            echo Please check the build output for errors.
-            pause
-            exit /b 1
-        )
-        
-        echo TableMorph built successfully!
-    ) else (
+    if not exist "mvnw.cmd" (
         echo Error: Maven wrapper (mvnw.cmd) not found!
         echo Please ensure you've cloned the complete repository.
         pause
         exit /b 1
     )
+    
+    :: Make sure the Maven wrapper is executable
+    attrib -R mvnw.cmd
+    
+    :: Build the project using Maven wrapper
+    echo Running Maven build...
+    call mvnw.cmd clean package assembly:single
+    if errorlevel 1 (
+        echo Error: Maven build failed!
+        echo Please check the build output for errors.
+        pause
+        exit /b 1
+    )
+    
+    if not exist "%TARGET_DIR%\%JAR_NAME%" (
+        echo Error: Build completed but JAR file was not created.
+        echo Please check the build output for errors.
+        pause
+        exit /b 1
+    )
+    
+    echo TableMorph built successfully!
 )
 
 :: Launch the application
 echo.
 echo Launching TableMorph...
 java -jar "%TARGET_DIR%\%JAR_NAME%"
-if !ERRORLEVEL! NEQ 0 (
+if errorlevel 1 (
     echo.
     echo Error: Failed to launch TableMorph.
     echo.
