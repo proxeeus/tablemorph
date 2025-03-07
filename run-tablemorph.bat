@@ -77,7 +77,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: Check if the JAR file exists, build if not
-set JAR_FILE=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar
+set "JAR_FILE=target\tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
 if not exist "%JAR_FILE%" (
     echo JAR file not found. Building TableMorph...
     
