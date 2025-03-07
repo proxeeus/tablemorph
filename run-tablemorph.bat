@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 
 :: ANSI color codes for Windows 10+
 set "GREEN=[0;32m"
@@ -44,19 +44,24 @@ if "%ARCH%" == "x64" (
     set "DOWNLOAD_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%%2B7/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.8_7.msi"
 )
 
-:: Try using bitsadmin (more reliable than PowerShell on some systems)
-bitsadmin /transfer JavaDownload /download /priority normal "%DOWNLOAD_URL%" "%CD%\java_installer.msi" > nul
+:: Try using PowerShell with progress display
+echo Downloading Java installer with progress display...
+powershell -Command "$ProgressPreference = 'Continue'; $wc = New-Object System.Net.WebClient; $wc.DownloadFile('%DOWNLOAD_URL%', 'java_installer.msi'); Write-Host 'Download complete!'"
+
+:: If PowerShell fails, try using bitsadmin with progress display
+if not exist "java_installer.msi" (
+    echo Trying alternative download method with BITS...
+    echo This may take a few minutes. Please wait...
+    bitsadmin /transfer JavaDownload /download /priority normal "%DOWNLOAD_URL%" "%CD%\java_installer.msi"
+    echo Download complete!
+)
 
 :: If bitsadmin fails, try using certutil as a fallback
 if not exist "java_installer.msi" (
-    echo Trying alternative download method...
-    certutil -urlcache -split -f "%DOWNLOAD_URL%" java_installer.msi > nul
-)
-
-:: If both methods fail, try PowerShell as a last resort
-if not exist "java_installer.msi" (
-    echo Trying PowerShell download method...
-    powershell -Command "(New-Object System.Net.WebClient).DownloadFile('%DOWNLOAD_URL%', 'java_installer.msi')"
+    echo Trying alternative download method with certutil...
+    echo This may take a few minutes. Please wait...
+    certutil -urlcache -split -f "%DOWNLOAD_URL%" java_installer.msi
+    echo Download complete!
 )
 
 :: Check if download was successful
@@ -71,15 +76,46 @@ if not exist "java_installer.msi" (
     exit /b 1
 )
 
-:: Install Java silently
+:: Install Java silently with progress display
 if "%COLORED%" == "yes" echo %YELLOW%
 echo Installing Java 17...
+echo This may take a few minutes. Please wait...
 if "%COLORED%" == "yes" echo %NC%
-start /wait msiexec /i java_installer.msi /quiet /qn /norestart
 
-:: Clean up
+:: Create a simple progress animation
+set "anim=|/-\"
+set count=0
+
+:: Start the installation in the background
+start /b "" msiexec /i java_installer.msi /quiet /qn /norestart /log install_log.txt
+
+:: Display a spinner while waiting for installation to complete
+echo Installing Java 
+:spinner
+set /a count+=1
+set /a index=count %% 4
+set "c=!anim:~%index%,1!"
+<nul set /p =!c!
+<nul set /p =^H
+:: Check if msiexec is still running
+tasklist | find /i "msiexec" >nul
+if not errorlevel 1 (
+    :: Still running, continue spinner
+    ping -n 2 127.0.0.1 >nul
+    goto spinner
+) else (
+    :: Installation complete
+    echo Installation complete!
+)
+
+:: Wait a bit to ensure installation is fully complete
+ping -n 5 127.0.0.1 >nul
+
+:: Clean up but keep the installer for troubleshooting if needed
+echo Cleaning up temporary files...
 cd ..
-rmdir /s /q temp
+if exist "temp\install_log.txt" type temp\install_log.txt
+:: Don't delete the temp folder immediately in case we need to debug
 
 :: Verify Java installation
 if "%COLORED%" == "yes" echo %YELLOW%
@@ -87,6 +123,7 @@ echo Verifying Java installation...
 if "%COLORED%" == "yes" echo %NC%
 
 :: Update PATH to include Java
+echo Updating PATH to include Java...
 set "PATH=%PATH%;%ProgramFiles%\Eclipse Adoptium\jdk-17.0.8.7-hotspot\bin;%ProgramFiles(x86)%\Eclipse Adoptium\jdk-17.0.8.7-hotspot\bin"
 
 :: Check if Java is now installed
@@ -94,6 +131,13 @@ java -version >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     if "%COLORED%" == "yes" echo %RED%
     echo Error: Java installation failed.
+    echo Checking installation log for errors...
+    
+    if exist "temp\install_log.txt" (
+        echo Installation log contents:
+        type temp\install_log.txt
+    )
+    
     if "%COLORED%" == "yes" echo %YELLOW%
     echo Please install Java manually from: https://adoptium.net/
     if "%COLORED%" == "yes" echo %NC%
@@ -128,6 +172,10 @@ if %JAVA_VERSION% LSS 8 (
 if "%COLORED%" == "yes" echo %GREEN%
 echo Java %JAVA_VERSION% installed successfully!
 if "%COLORED%" == "yes" echo %NC%
+
+:: Now that Java is installed successfully, clean up the temp directory
+rmdir /s /q temp
+
 goto :continue_after_java
 
 :: Check if Java is installed and has the correct version
