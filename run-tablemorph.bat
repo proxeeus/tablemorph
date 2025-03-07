@@ -149,7 +149,8 @@ exit /b 0
 
     :: Display a spinner while waiting for download to complete
     echo [    ] 
-    :download_spinner
+
+:download_spinner
     set /a count+=1
     set /a index=count %% 4
     set "c=!anim:~%index%,1!"
@@ -165,7 +166,7 @@ exit /b 0
                 if errorlevel 1 (
                     :: Download complete
                     echo Download complete!
-                    goto :download_complete
+                    goto download_complete
                 )
             )
         )
@@ -173,7 +174,7 @@ exit /b 0
     
     :: Still downloading, continue spinner
     ping -n 2 127.0.0.1 >nul
-    goto download_spinner
+    goto :download_spinner
 
 :download_complete
     :: If the download failed, try using certutil as a fallback
