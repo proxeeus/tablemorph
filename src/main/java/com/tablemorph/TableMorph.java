@@ -115,7 +115,7 @@ public class TableMorph {
             System.out.println("║  2. 🧬 Morph with Samples          ║");
             System.out.println("║  3. 📦 Batch Generate Wavetables   ║");
             System.out.println("║  4. 🧪 Batch Morph Wavetables      ║");
-            System.out.println("║  5. ℹ️  Wavetable Info             ║");
+            System.out.println("║  5. ℹ️ Wavetable Info             ║");
             System.out.println("║  6. 🧙 Configuration               ║");
             System.out.println("║  7. 👋 Quit                        ║");
             System.out.println("╚════════════════════════════════════╝");
@@ -427,10 +427,13 @@ public class TableMorph {
         int frames = GeneratorConfig.getWavetableFrames();
         int samples = GeneratorConfig.getWavetableSamples();
         
+        // Create a formatted string for the frame and sample counts
+        String frameInfo = String.format("Each generated wavetable contains %d frames of %d samples", frames, samples);
+        
         System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
         System.out.println("║                    WAVETABLE INFORMATION                      ║");
         System.out.println("╠═══════════════════════════════════════════════════════════════╣");
-        System.out.println("║ Each generated wavetable contains " + frames + " frames of " + samples + " samples   ║");
+        System.out.println("║ " + frameInfo + getSpaces(51 - frameInfo.length()) + "║");
         System.out.println("║ each. These are designed to be compatible with the Vital      ║");
         System.out.println("║ synthesizer's wavetable format.                               ║");
         System.out.println("║                                                               ║");
@@ -532,8 +535,15 @@ public class TableMorph {
      * Configures Vital integration settings.
      */
     private static void configureVitalIntegration() {
-        System.out.println("\n═══ Vital Integration Settings ═══");
-        
+        System.out.println("\n╔════════════════════════════════════╗");
+        System.out.println("║       VITAL INTEGRATION           ║");
+        System.out.println("╠════════════════════════════════════╣");
+        System.out.println("║  1. Enable/Disable Integration    ║");
+        System.out.println("║  2. Set Vital Wavetables Path     ║");
+        System.out.println("║  3. Reset to Default Directory    ║");
+        System.out.println("║  4. Back to Configuration Menu    ║");
+        System.out.println("╚════════════════════════════════════╝");
+            
         // Check if OS is supported
         if (!GeneratorConfig.isOSSupported()) {
             System.out.println("\n❌ Your operating system is not currently supported for Vital integration.");
@@ -542,14 +552,12 @@ public class TableMorph {
             scanner.nextLine();
             return;
         }
-        
+            
         while (true) {
             System.out.println("\nCurrent Settings:");
             System.out.println("1. Save to Vital's Directory: " + 
                 (GeneratorConfig.getSaveToVital() ? "Enabled ✓" : "Disabled ✗"));
             System.out.println("2. Vital's Wavetables Directory: " + GeneratorConfig.getVitalWavetablesDirectory());
-            System.out.println("3. Reset to Default Directory");
-            System.out.println("4. Back to Configuration Menu");
             
             System.out.print("\nEnter your choice (1-4) > ");
             String choice = scanner.nextLine().trim();
@@ -557,24 +565,24 @@ public class TableMorph {
             switch (choice) {
                 case "1":
                     boolean currentValue = GeneratorConfig.getSaveToVital();
-                    System.out.print("\nSave wavetables to Vital's directory? (y/n): ");
-                    String saveChoice = scanner.nextLine().trim().toLowerCase();
-                    if (saveChoice.startsWith("y")) {
-                        GeneratorConfig.setSaveToVital(true);
-                        System.out.println("✓ Enabled saving to Vital's directory");
-                    } else if (saveChoice.startsWith("n")) {
-                        GeneratorConfig.setSaveToVital(false);
-                        System.out.println("✓ Disabled saving to Vital's directory");
-                    }
+                    GeneratorConfig.setSaveToVital(!currentValue);
+                    System.out.println("✓ Integration " + (!currentValue ? "enabled" : "disabled"));
                     break;
                     
                 case "2":
-                    System.out.println("\nCurrent directory: " + GeneratorConfig.getVitalWavetablesDirectory());
-                    System.out.print("Enter new directory path (or press Enter to keep current): ");
+                    System.out.println("\nEnter the path to Vital's wavetables directory:");
+                    System.out.println("(Leave blank to cancel)");
+                    System.out.print("> ");
                     String newPath = scanner.nextLine().trim();
+                    
                     if (!newPath.isEmpty()) {
-                        GeneratorConfig.setVitalWavetablesDirectory(newPath);
-                        System.out.println("✓ Updated Vital's wavetables directory");
+                        File directory = new File(newPath);
+                        if (directory.exists() && directory.isDirectory()) {
+                            GeneratorConfig.setVitalWavetablesDirectory(newPath);
+                            System.out.println("✓ Path updated");
+                        } else {
+                            System.out.println("❌ Invalid directory path. Directory does not exist.");
+                        }
                     }
                     break;
                     
@@ -598,11 +606,17 @@ public class TableMorph {
      */
     private static void configureWavetableSettings() {
         while (true) {
-            System.out.println("\n═══ Wavetable Settings ═══");
+            System.out.println("\n╔════════════════════════════════════╗");
+            System.out.println("║       WAVETABLE SETTINGS          ║");
+            System.out.println("╠════════════════════════════════════╣");
+            System.out.println("║  1. Frame Count                   ║");
+            System.out.println("║  2. Sample Count                  ║");
+            System.out.println("║  3. Back to Configuration Menu    ║");
+            System.out.println("╚════════════════════════════════════╝");
+            
             System.out.println("\nCurrent Settings:");
             System.out.println("1. Frame Count: " + GeneratorConfig.getWavetableFrames());
             System.out.println("2. Sample Count: " + GeneratorConfig.getWavetableSamples());
-            System.out.println("3. Back to Configuration Menu");
             
             System.out.print("\nEnter your choice (1-3) > ");
             String choice = scanner.nextLine().trim();
@@ -658,12 +672,17 @@ public class TableMorph {
      */
     private static void configureMorphSettings() {
         while (true) {
-            System.out.println("\n═══ Morphing Settings ═══");
+            System.out.println("\n╔════════════════════════════════════╗");
+            System.out.println("║       MORPHING SETTINGS           ║");
+            System.out.println("╠════════════════════════════════════╣");
+            System.out.println("║  1. Max Morph Samples             ║");
+            System.out.println("║  2. Full Sample Probability       ║");
+            System.out.println("║  3. Back to Configuration Menu    ║");
+            System.out.println("╚════════════════════════════════════╝");
+            
             System.out.println("\nCurrent Settings:");
             System.out.println("1. Max Morph Samples: " + GeneratorConfig.getMaxMorphSamples());
-            System.out.println("2. Full Sample Probability: " + 
-                (GeneratorConfig.getFullSampleProbability() * 100) + "%");
-            System.out.println("3. Back to Configuration Menu");
+            System.out.println("2. Full Sample Probability: " + GeneratorConfig.getFullSampleProbability() + "%");
             
             System.out.print("\nEnter your choice (1-3) > ");
             String choice = scanner.nextLine().trim();
