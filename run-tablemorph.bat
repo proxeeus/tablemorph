@@ -110,49 +110,16 @@ exit /b 0
         set "DOWNLOAD_URL=https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%%2B7/OpenJDK17U-jdk_x86-32_windows_hotspot_17.0.8_7.msi"
     )
 
-    :: Create a PowerShell script to download with progress
-    echo $progressPreference = 'Continue' > download.ps1
-    echo $webClient = New-Object System.Net.WebClient >> download.ps1
-    echo $uri = New-Object System.Uri('%DOWNLOAD_URL%') >> download.ps1
-    echo $file = '%CD%\java_installer.msi' >> download.ps1
-    echo Write-Host "Downloading Java installer..." >> download.ps1
-    echo $totalLength = 0 >> download.ps1
-    echo try { >> download.ps1
-    echo     $request = [System.Net.HttpWebRequest]::Create($uri) >> download.ps1
-    echo     $response = $request.GetResponse() >> download.ps1
-    echo     $totalLength = $response.ContentLength >> download.ps1
-    echo     $response.Close() >> download.ps1
-    echo } catch { >> download.ps1
-    echo     Write-Host "Could not determine file size. Download will proceed without accurate progress reporting." >> download.ps1
-    echo     $totalLength = 100000000 >> download.ps1
-    echo } >> download.ps1
-    echo $webClient.DownloadProgressChanged = { >> download.ps1
-    echo     $percent = [Math]::Floor($_.BytesReceived * 100 / $totalLength) >> download.ps1
-    echo     $bar = "[" + ("=" * [Math]::Floor($percent/2)) + ">" + (" " * (50 - [Math]::Floor($percent/2))) + "]" >> download.ps1
-    echo     Write-Host -NoNewline "`r$bar $percent%% " >> download.ps1
-    echo } >> download.ps1
-    echo $webClient.DownloadFileCompleted = { >> download.ps1
-    echo     Write-Host "`nDownload complete!" >> download.ps1
-    echo } >> download.ps1
-    echo $webClient.DownloadFileAsync($uri, $file) >> download.ps1
-    echo while ($webClient.IsBusy) { Start-Sleep -Milliseconds 100 } >> download.ps1
+    :: Download using BITS (built into Windows)
+    echo Downloading Java installer with BITS...
+    echo [    0%%] Initializing download...
+    bitsadmin /transfer JavaDownload /download /priority high "%DOWNLOAD_URL%" "%CD%\java_installer.msi" > nul
 
-    :: Run the PowerShell script to download with progress
-    powershell -ExecutionPolicy Bypass -File download.ps1
-
-    :: If PowerShell fails, try using bitsadmin with progress display
-    if not exist "java_installer.msi" (
-        echo Trying alternative download method with BITS...
-        echo This may take a few minutes. Please wait...
-        bitsadmin /transfer JavaDownload /download /priority normal "%DOWNLOAD_URL%" "%CD%\java_installer.msi"
-        echo Download complete!
-    )
-
-    :: If bitsadmin fails, try using certutil as a fallback
+    :: If BITS fails, try using certutil as a fallback
     if not exist "java_installer.msi" (
         echo Trying alternative download method with certutil...
         echo This may take a few minutes. Please wait...
-        certutil -urlcache -split -f "%DOWNLOAD_URL%" java_installer.msi
+        certutil -urlcache -split -f "%DOWNLOAD_URL%" java_installer.msi > nul
         echo Download complete!
     )
 
@@ -163,6 +130,8 @@ exit /b 0
         cd ..
         pause
         exit /b 1
+    ) else (
+        echo Download complete!
     )
 
     :: Install Java silently with progress display
