@@ -87,54 +87,69 @@ if errorlevel 1 (
 echo Checking for JAR file...
 set "TARGET_DIR=target"
 set "JAR_NAME=tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar"
+set "JAR_PATH=%TARGET_DIR%\%JAR_NAME%"
 
-if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
-
-if not exist "%TARGET_DIR%\%JAR_NAME%" (
-    echo JAR file not found. Building TableMorph...
-    
-    if not exist "mvnw.cmd" (
-        echo Error: Maven wrapper (mvnw.cmd) not found!
-        echo Please ensure you've cloned the complete repository.
-        pause
-        exit /b 1
-    )
-    
-    :: Make sure the Maven wrapper is executable
-    attrib -R mvnw.cmd
-    
-    :: Build the project using Maven wrapper
-    echo Running Maven build...
-    call mvnw.cmd clean package assembly:single
-    if errorlevel 1 (
-        echo Error: Maven build failed!
-        echo Please check the build output for errors.
-        pause
-        exit /b 1
-    )
-    
-    if not exist "%TARGET_DIR%\%JAR_NAME%" (
-        echo Error: Build completed but JAR file was not created.
-        echo Please check the build output for errors.
-        pause
-        exit /b 1
-    )
-    
-    echo TableMorph built successfully!
+:: Create target directory if it doesn't exist
+if not exist "%TARGET_DIR%" (
+    mkdir "%TARGET_DIR%"
 )
 
+:: Check if JAR file exists
+if exist "%JAR_PATH%" goto LaunchApp
+
+:: Build the application if JAR doesn't exist
+echo JAR file not found. Building TableMorph...
+
+:: Check for Maven wrapper
+if not exist "mvnw.cmd" goto MavenWrapperMissing
+
+:: Make Maven wrapper executable
+attrib -R mvnw.cmd
+
+:: Run Maven build
+echo Running Maven build...
+call mvnw.cmd clean package assembly:single
+if errorlevel 1 goto BuildFailed
+
+:: Verify JAR was created
+if not exist "%JAR_PATH%" goto JarNotCreated
+
+echo TableMorph built successfully!
+
+:LaunchApp
 :: Launch the application
 echo.
 echo Launching TableMorph...
-java -jar "%TARGET_DIR%\%JAR_NAME%"
-if errorlevel 1 (
-    echo.
-    echo Error: Failed to launch TableMorph.
-    echo.
-    pause
-    exit /b 1
-)
+java -jar "%JAR_PATH%"
+if errorlevel 1 goto LaunchFailed
+goto End
 
+:MavenWrapperMissing
+echo Error: Maven wrapper (mvnw.cmd) not found!
+echo Please ensure you've cloned the complete repository.
+pause
+exit /b 1
+
+:BuildFailed
+echo Error: Maven build failed!
+echo Please check the build output for errors.
+pause
+exit /b 1
+
+:JarNotCreated
+echo Error: Build completed but JAR file was not created.
+echo Please check the build output for errors.
+pause
+exit /b 1
+
+:LaunchFailed
+echo.
+echo Error: Failed to launch TableMorph.
+echo.
+pause
+exit /b 1
+
+:End
 exit /b 0
 
 :: Function to install Java
@@ -184,7 +199,7 @@ exit /b 0
                 if errorlevel 1 (
                     :: Download complete
                     echo Download complete!
-                    goto :download_complete
+                    goto download_complete
                 )
             )
         )
@@ -192,7 +207,7 @@ exit /b 0
     
     :: Still downloading, continue spinner
     ping -n 2 127.0.0.1 >nul
-    goto :download_spinner
+    goto download_spinner
 
 :download_complete
     :: If the download failed, try using certutil as a fallback
@@ -204,13 +219,7 @@ exit /b 0
     )
 
     :: Check if download was successful
-    if not exist "java_installer.msi" (
-        echo Error: Failed to download Java installer.
-        echo Please install Java manually from: https://adoptium.net/
-        cd ..
-        pause
-        exit /b 1
-    )
+    if not exist "java_installer.msi" goto DownloadFailed
 
     :: Install Java silently with progress display
     echo Installing Java 17...
@@ -240,6 +249,7 @@ exit /b 0
     :: Clean up but keep the installer for troubleshooting if needed
     echo Cleaning up temporary files...
     cd ..
+    
     if exist "temp\%log_file%" type "temp\%log_file%"
 
     :: Verify Java installation
@@ -251,19 +261,7 @@ exit /b 0
 
     :: Check if Java is now installed
     java -version >nul 2>&1
-    if %ERRORLEVEL% NEQ 0 (
-        echo Error: Java installation failed.
-        echo Checking installation log for errors...
-        
-        if exist "temp\%log_file%" (
-            echo Installation log contents:
-            type "temp\%log_file%"
-        )
-        
-        echo Please install Java manually from: https://adoptium.net/
-        pause
-        exit /b 1
-    )
+    if errorlevel 1 goto JavaInstallFailed
 
     :: Check Java version using the same method as above
     java -version 2>&1 | findstr /i "version" > java_version.tmp
@@ -290,16 +288,37 @@ exit /b 0
     :: Clean up temporary file
     del java_version.tmp
 
-    if !JAVA_VERSION! LSS 8 (
-        echo Error: Java installation failed or version is still too old.
-        echo Please install Java manually from: https://adoptium.net/
-        pause
-        exit /b 1
-    )
+    if !JAVA_VERSION! LSS 8 goto JavaTooOld
 
     echo Java !JAVA_VERSION! installed successfully!
 
     :: Now that Java is installed successfully, clean up the temp directory
     rmdir /s /q temp
 
-    exit /b 0 
+    exit /b 0
+
+:DownloadFailed
+    echo Error: Failed to download Java installer.
+    echo Please install Java manually from: https://adoptium.net/
+    cd ..
+    pause
+    exit /b 1
+
+:JavaInstallFailed
+    echo Error: Java installation failed.
+    echo Checking installation log for errors...
+    
+    if exist "temp\%log_file%" (
+        echo Installation log contents:
+        type "temp\%log_file%"
+    )
+    
+    echo Please install Java manually from: https://adoptium.net/
+    pause
+    exit /b 1
+
+:JavaTooOld
+    echo Error: Java installation failed or version is still too old.
+    echo Please install Java manually from: https://adoptium.net/
+    pause
+    exit /b 1 
