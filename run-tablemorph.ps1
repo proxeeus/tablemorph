@@ -1,7 +1,38 @@
 # TableMorph Launcher - PowerShell Edition
-# To run this script, you may need to set the execution policy:
-# Open PowerShell as Administrator and run: Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
-# Or run this script directly with: powershell -ExecutionPolicy Bypass -File run-tablemorph.ps1
+# This script will attempt to bypass execution policy restrictions automatically
+
+<#
+.SYNOPSIS
+    TableMorph Launcher for Windows
+.DESCRIPTION
+    This script launches the TableMorph application, installing Java if needed.
+    It will attempt to bypass PowerShell execution policy restrictions automatically.
+.NOTES
+    If you're seeing execution policy errors, try running this script using one of these methods:
+    1. Right-click the script and select "Run with PowerShell"
+    2. Open PowerShell as Administrator and run: 
+       powershell -ExecutionPolicy Bypass -File path\to\run-tablemorph.ps1
+    3. Temporarily change the execution policy:
+       Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+#>
+
+# Self-elevate and bypass execution policy if needed
+if ($MyInvocation.Line -notlike "*-ExecutionPolicy Bypass*") {
+    try {
+        # Try to restart the script with execution policy bypass
+        $scriptPath = $MyInvocation.MyCommand.Path
+        $commandLine = "powershell.exe -ExecutionPolicy Bypass -File `"$scriptPath`""
+        Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy Bypass -File `"$scriptPath`"" -Wait -NoNewWindow
+        exit
+    } catch {
+        Write-Host "Could not automatically bypass execution policy. Please run this script using one of these methods:" -ForegroundColor Yellow
+        Write-Host "1. Right-click the script and select 'Run with PowerShell'" -ForegroundColor Yellow
+        Write-Host "2. Open PowerShell as Administrator and run: powershell -ExecutionPolicy Bypass -File path\to\run-tablemorph.ps1" -ForegroundColor Yellow
+        Write-Host "3. Temporarily change the execution policy: Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force" -ForegroundColor Yellow
+        Read-Host "Press Enter to exit"
+        exit
+    }
+}
 
 # ANSI color codes
 $GREEN = "`e[0;32m"
