@@ -19,7 +19,7 @@ TableMorph is a powerful wavetable generator designed specifically for the [Vita
 
 ## Installation
 
-1. Download the latest release from the [Releases](https://github.com/yourusername/tablemorph/releases) page
+1. Download the latest release from the [Releases](https://github.com/proxeeus/tablemorph/releases) page
 2. Extract the ZIP file to a location of your choice
 3. Run the application using the provided launcher script:
    - On Windows: `run-tablemorph.bat`
