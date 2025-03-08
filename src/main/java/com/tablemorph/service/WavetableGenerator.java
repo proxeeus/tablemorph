@@ -12,10 +12,15 @@ import java.util.Arrays;
 import com.tablemorph.config.GeneratorConfig;
 
 /**
- * Service class for generating random wavetables.
- * Creates complex multi-frame wavetables for use in the Vital synthesizer.
+ * Service class for generating wavetables.
+ * Supports:
+ * - Multi-frame complex wavetables with various waveform types
+ * - Single-cycle oscillator waveforms (sine, triangle, saw, square, noise, FM, additive, formant)
+ * - Morphing with audio samples
+ * - Batch generation of all wavetable types
  *
  * @author Proxeeus
+ * @version 1.1
  */
 public class WavetableGenerator {
     private static final String WAVETABLE_DIRECTORY = "wavetables";

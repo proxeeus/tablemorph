@@ -1,14 +1,15 @@
 # TableMorph - Wavetable Generator for Vital
 
-TableMorph is a powerful wavetable generator designed specifically for the [Vital synthesizer](https://vital.audio/). It allows you to create unique wavetables from scratch or morph them with your own audio samples.
+TableMorph is a powerful wavetable generator designed specifically for the [Vital synthesizer](https://vital.audio/). It allows you to create unique wavetables from scratch, generate single-cycle waveforms, or morph them with your own audio samples.
 
 ![TableMorph Logo](docs/images/tablemorph_logo.png)
 
 ## Features
 
 - **Random Wavetable Generation**: Create unique wavetables with various harmonic structures
+- **Single-Cycle Wavetables**: Generate individual oscillator waveforms with various types (sine, saw, square, triangle, FM, additive, formant)
 - **Sample Morphing**: Blend your audio samples with generated wavetables
-- **Batch Processing**: Generate multiple wavetables at once
+- **Batch Processing**: Generate multiple wavetables or single-cycle waveforms at once
 - **Direct Vital Integration**: Save wavetables directly to Vital's wavetable directory
 - **Customizable Settings**: Configure frame count, sample count, and morphing parameters
 
@@ -30,11 +31,15 @@ TableMorph is a powerful wavetable generator designed specifically for the [Vita
 1. Launch TableMorph
 2. Choose an option from the main menu:
    - Generate a single wavetable
+   - Generate a single-cycle wavetable
    - Morph with samples
    - Batch generate wavetables
+   - Batch generate single-cycle wavetables
    - Batch morph wavetables
-3. Generated wavetables will be saved to:
-   - The local `wavetables` and `morphs` directories
+3. Generated files will be saved to:
+   - Multi-frame wavetables: `wavetables` directory
+   - Single-cycle wavetables: `singlecycles` directory
+   - Morphed wavetables: `morphs` directory
    - Your Vital wavetables directory (if enabled)
 
 ## Using Your Wavetables in Vital
@@ -55,11 +60,27 @@ To use your own audio samples for morphing:
 2. Choose the "Morph with Samples" or "Batch Morph Wavetables" option
 3. The application will randomly select and incorporate your samples
 
+## Single-Cycle Wavetable Types
+
+TableMorph can generate several types of single-cycle wavetables:
+
+- **Sine**: Pure sine waves with optional harmonic content
+- **Triangle**: Triangle waves with variable slope
+- **Sawtooth**: Standard and reverse sawtooth waves
+- **Square**: Square waves with variable pulse width
+- **Noise**: Filtered noise for usable wavetables
+- **FM**: Frequency modulation with randomized carrier and modulator parameters
+- **Additive**: Harmonically rich waveforms with multiple partials
+- **Formant**: Vowel-like waveforms with formant filtering
+
+Each generated waveform includes randomized parameters to ensure uniqueness.
+
 ## Configuration
 
 TableMorph offers several configuration options:
 
 - **Wavetable Settings**: Frame count, sample count
+- **Single-Cycle Settings**: Sample count
 - **Morphing Settings**: Max morph samples, full sample probability
 - **Vital Integration**: Enable/disable saving to Vital, customize Vital directory path
 
@@ -67,14 +88,17 @@ TableMorph offers several configuration options:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/tablemorph.git
+git clone https://github.com/proxeeus/tablemorph.git
 cd tablemorph
 
 # Build with Maven
-./mvnw clean install
+./mvnw clean package
 
 # Run the application
-./run-tablemorph.sh  # or run-tablemorph.bat on Windows
+java -jar target/tablemorph-1.0-SNAPSHOT-jar-with-dependencies.jar
+# Or use the provided scripts:
+# ./run-tablemorph.sh (macOS/Linux)
+# run-tablemorph.bat (Windows)
 ```
 
 ## License

@@ -6,8 +6,14 @@ import java.util.Properties;
 /**
  * Configuration class for TableMorph.
  * Handles loading and saving of configuration settings.
+ * Manages settings for:
+ * - Multi-frame wavetable generation
+ * - Single-cycle wavetable generation
+ * - Sample morphing
+ * - Vital integration
  *
  * @author Proxeeus
+ * @version 1.1
  */
 public class GeneratorConfig {
     private static final String CONFIG_FILE = "tablemorph_config.properties";

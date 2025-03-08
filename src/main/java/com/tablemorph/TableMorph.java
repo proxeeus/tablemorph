@@ -13,11 +13,16 @@ import com.tablemorph.service.WavetableGenerator;
 import com.tablemorph.config.GeneratorConfig;
 
 /**
- * TableMorph: A generator for creating random wavetables for the Vital synthesizer.
- * Creates complex multi-frame wavetables with various waveform types and morphing.
+ * TableMorph: A generator for creating wavetables for the Vital synthesizer.
+ * Features:
+ * 1. Creates complex multi-frame wavetables with various waveform types
+ * 2. Generates single-cycle wavetables with different oscillator shapes
+ * 3. Provides wavetable morphing with audio samples
+ * 4. Supports batch generation of all wavetable types
+ * 5. Includes configurable settings for all generation methods
  * 
  * @author Proxeeus
- * @version 1.0
+ * @version 1.1
  */
 public class TableMorph {
     
