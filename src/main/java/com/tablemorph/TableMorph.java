@@ -123,8 +123,9 @@ public class TableMorph {
             System.out.println("║  5. Generate Single-Cycle Wave    ║");
             System.out.println("║  6. Batch Generate Single-Cycles  ║");
             System.out.println("║  7. Generate Experimental Wave    ║");
-            System.out.println("║  8. Wavetable Information         ║");
-            System.out.println("║  9. Configuration                 ║");
+            System.out.println("║  8. Batch Generate Experimental   ║");
+            System.out.println("║  9. Wavetable Information         ║");
+            System.out.println("║  10. Configuration                ║");
             System.out.println("║  0. Exit                          ║");
             System.out.println("╚════════════════════════════════════╝");
             
@@ -155,9 +156,12 @@ public class TableMorph {
                     generateExperimentalWavetable();
                     break;
                 case "8":
-                    displayWavetableInfo();
+                    generateBatchExperimentalWavetables();
                     break;
                 case "9":
+                    displayWavetableInfo();
+                    break;
+                case "10":
                     displayConfigMenu();
                     break;
                 case "0":
@@ -913,6 +917,52 @@ public class TableMorph {
             System.out.println("4. Choose 'Import' and select the .wav file");
         } catch (IOException e) {
             System.out.println("\n[ERROR] Error generating experimental wavetable: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Batch generates multiple experimental wavetables.
+     */
+    private static void generateBatchExperimentalWavetables() {
+        // Create directory if it doesn't exist
+        wavetableGenerator.createSingleCycleDirectory();
+        
+        // Get number of wavetables to generate
+        System.out.print("\nHow many experimental wavetables to generate? (1-100): ");
+        int count = 5; // Default value
+        
+        try {
+            count = Integer.parseInt(scanner.nextLine().trim());
+            if (count < 1) {
+                System.out.println("\n[ERROR] Invalid number. Using 1 instead.");
+                count = 1;
+            } else if (count > 100) {
+                System.out.println("\n[ERROR] Maximum is 100. Using 100 instead.");
+                count = 100;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid number. Using 5 as default.");
+        }
+        
+        System.out.println("\nGenerating " + count + " experimental wavetables...");
+        
+        // Generate experimental wavetables
+        try {
+            List<Path> generatedFiles = wavetableGenerator.batchGenerateExperimentalWavetables(count);
+            
+            System.out.println("\n[SUCCESS] Batch generation complete!");
+            System.out.println("[FILE] All experimental wavetables are saved in the '" + 
+                GeneratorConfig.getSingleCycleDirectory() + "' directory");
+            
+            if (GeneratorConfig.getSaveToVital() && GeneratorConfig.isOSSupported()) {
+                System.out.println("[VITAL] Also saved to Vital's wavetables directory: " + 
+                    GeneratorConfig.getVitalWavetablesDirectory());
+            }
+            
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+        } catch (IOException e) {
+            System.out.println("\n[ERROR] Error during batch generation: " + e.getMessage());
         }
     }
 } 

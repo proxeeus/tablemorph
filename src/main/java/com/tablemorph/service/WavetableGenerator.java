@@ -1422,4 +1422,36 @@ public class WavetableGenerator {
         
         return waveform;
     }
+
+    /**
+     * Batch generates multiple experimental wavetables.
+     * 
+     * @param count Number of experimental wavetables to generate
+     * @return List of paths to the generated wavetable files
+     * @throws IOException If there is an error saving the wavetables
+     */
+    public List<Path> batchGenerateExperimentalWavetables(int count) throws IOException {
+        List<Path> generatedFiles = new ArrayList<>();
+        
+        for (int i = 0; i < count; i++) {
+            // Generate a unique seed based on current time and iteration
+            long seed = System.currentTimeMillis() + i;
+            
+            // Generate the experimental wavetable
+            Path path = generateSingleCycleWavetable(SINGLECYCLE_EXPERIMENTAL, seed);
+            generatedFiles.add(path);
+            
+            // Output progress
+            System.out.println("Generated experimental wavetable " + (i+1) + "/" + count + ": " + path.getFileName());
+            
+            // Brief pause between generations for better time-based seed uniqueness
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        return generatedFiles;
+    }
 } 
