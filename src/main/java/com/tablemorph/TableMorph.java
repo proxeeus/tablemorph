@@ -114,18 +114,20 @@ public class TableMorph {
     private static void displayMenu() {
         while (true) {
             System.out.println("\n╔════════════════════════════════════╗");
-            System.out.println("║            MAIN MENU              ║");
+            System.out.println("║        TABLEMORPH MENU            ║");
             System.out.println("╠════════════════════════════════════╣");
-            System.out.println("║  1. [G] Generate Wavetable        ║");
-            System.out.println("║  2. [M] Morph with Samples        ║");
-            System.out.println("║  3. [B] Batch Generate Wavetables ║");
-            System.out.println("║  4. [X] Batch Morphed Wavetables    ║");
-            System.out.println("║  5. [S] Single-Cycle Wavetable    ║");
-            System.out.println("║  6. [C] Batch Single-Cycle        ║");
-            System.out.println("║  7. [I] Wavetable Info            ║");
-            System.out.println("║  8. [O] Configuration             ║");
-            System.out.println("║  9. [Q] Quit                      ║");
+            System.out.println("║  1. Generate Wavetable            ║");
+            System.out.println("║  2. Morph with Samples            ║");
+            System.out.println("║  3. Batch Generate Wavetables     ║");
+            System.out.println("║  4. Batch Morph Wavetables        ║");
+            System.out.println("║  5. Generate Single-Cycle Wave    ║");
+            System.out.println("║  6. Batch Generate Single-Cycles  ║");
+            System.out.println("║  7. Generate Experimental Wave    ║");
+            System.out.println("║  8. Wavetable Information         ║");
+            System.out.println("║  9. Configuration                 ║");
+            System.out.println("║  0. Exit                          ║");
             System.out.println("╚════════════════════════════════════╝");
+            
             System.out.print("Enter your choice > ");
             
             String choice = scanner.nextLine().trim();
@@ -150,12 +152,15 @@ public class TableMorph {
                     generateBatchSingleCycleWavetables();
                     break;
                 case "7":
-                    displayWavetableInfo();
+                    generateExperimentalWavetable();
                     break;
                 case "8":
-                    displayConfigMenu();
+                    displayWavetableInfo();
                     break;
                 case "9":
+                    displayConfigMenu();
+                    break;
+                case "0":
                     System.out.println("\nGoodbye! Thanks for using TableMorph!");
                     System.exit(0);
                     break;
@@ -766,13 +771,16 @@ public class TableMorph {
             System.out.println("║    SINGLE-CYCLE SETTINGS          ║");
             System.out.println("╠════════════════════════════════════╣");
             System.out.println("║  1. Sample Count                  ║");
-            System.out.println("║  2. Back to Configuration Menu    ║");
+            System.out.println("║  2. Experimental Probability      ║");
+            System.out.println("║  3. Back to Configuration Menu    ║");
             System.out.println("╚════════════════════════════════════╝");
             
             System.out.println("\nCurrent Settings:");
             System.out.println("1. Sample Count: " + GeneratorConfig.getSingleCycleSamples());
+            System.out.println("2. Experimental Waveform Probability: " + 
+                String.format("%.1f", GeneratorConfig.getExperimentalWaveformProbability() * 100) + "%");
             
-            System.out.print("\nEnter your choice (1-2) > ");
+            System.out.print("\nEnter your choice (1-3) > ");
             String choice = scanner.nextLine().trim();
             
             switch (choice) {
@@ -793,8 +801,26 @@ public class TableMorph {
                         System.out.println("[ERROR] Invalid input. Please enter a number.");
                     }
                     break;
-                    
+                
                 case "2":
+                    System.out.println("\nThe experimental waveform probability determines how often standard waveforms");
+                    System.out.println("are replaced with more complex, experimental algorithms.");
+                    System.out.println("Higher values result in more unique and surprising timbres.");
+                    System.out.print("\nEnter new probability (0-100%): ");
+                    try {
+                        double probability = Double.parseDouble(scanner.nextLine().trim());
+                        if (probability >= 0 && probability <= 100) {
+                            GeneratorConfig.setExperimentalWaveformProbability(probability / 100.0);
+                            System.out.println("[OK] Experimental waveform probability updated to " + probability + "%");
+                        } else {
+                            System.out.println("[ERROR] Invalid value. Must be between 0 and 100.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
+                    }
+                    break;
+                    
+                case "3":
                     return;
                     
                 default:
@@ -863,6 +889,30 @@ public class TableMorph {
             scanner.nextLine();
         } catch (IOException e) {
             System.out.println("\n[ERROR] Error during batch generation: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generates an experimental single-cycle wavetable with advanced algorithms.
+     */
+    private static void generateExperimentalWavetable() {
+        try {
+            // Create directory if it doesn't exist
+            wavetableGenerator.createSingleCycleDirectory();
+            
+            // Generate the experimental wavetable
+            Path wavetablePath = wavetableGenerator.generateSingleCycleWavetable(
+                WavetableGenerator.SINGLECYCLE_EXPERIMENTAL, System.currentTimeMillis());
+                
+            System.out.println("\n[SUCCESS] New experimental wavetable generated!");
+            System.out.println("[FILE] Location: " + wavetablePath.toAbsolutePath());
+            System.out.println("\nTo use this wavetable in VITAL:");
+            System.out.println("1. Copy the .wav file to your VITAL wavetables folder");
+            System.out.println("2. In VITAL, select an oscillator");
+            System.out.println("3. Click the wavetable button");
+            System.out.println("4. Choose 'Import' and select the .wav file");
+        } catch (IOException e) {
+            System.out.println("\n[ERROR] Error generating experimental wavetable: " + e.getMessage());
         }
     }
 } 

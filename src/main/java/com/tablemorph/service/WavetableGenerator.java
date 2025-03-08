@@ -46,8 +46,10 @@ public class WavetableGenerator {
     public static final int SINGLECYCLE_ADDITIVE = 6;
     public static final int SINGLECYCLE_FORMANT = 7;
     public static final int SINGLECYCLE_CUSTOM = 8;
+    public static final int SINGLECYCLE_EXPERIMENTAL = 9;
     
     private final Random random = new Random();
+    private final ExperimentalWaveformGenerator experimentalGenerator = new ExperimentalWaveformGenerator();
 
     /**
      * Creates the wavetables directory if it doesn't exist.
@@ -1021,7 +1023,9 @@ public class WavetableGenerator {
      * Generates a single-cycle wavetable with a random waveform type.
      */
     public Path generateRandomSingleCycleWavetable() throws IOException {
-        return generateSingleCycleWavetable(random.nextInt(SINGLECYCLE_CUSTOM), System.currentTimeMillis());
+        // Include SINGLECYCLE_EXPERIMENTAL in the random selection
+        int maxType = SINGLECYCLE_EXPERIMENTAL + 1;
+        return generateSingleCycleWavetable(random.nextInt(maxType), System.currentTimeMillis());
     }
     
     /**
@@ -1137,6 +1141,13 @@ public class WavetableGenerator {
      * Generates a single-cycle waveform based on the specified type.
      */
     private float[] generateSingleCycleWaveform(int waveformType, int sampleCount, Random randomGenerator) {
+        // Check if we should use an experimental waveform instead
+        if (waveformType != SINGLECYCLE_EXPERIMENTAL && 
+            randomGenerator.nextDouble() < GeneratorConfig.getExperimentalWaveformProbability()) {
+            // Randomly replace with an experimental waveform
+            return generateExperimentalWaveform(sampleCount, randomGenerator);
+        }
+        
         float[] waveform = new float[sampleCount];
         
         switch (waveformType) {
@@ -1172,6 +1183,9 @@ public class WavetableGenerator {
                 generateFormantWaveform(waveform, sampleCount, randomGenerator);
                 break;
                 
+            case SINGLECYCLE_EXPERIMENTAL:
+                return generateExperimentalWaveform(sampleCount, randomGenerator);
+                
             default:
                 // Default to sine wave if unknown type
                 generateSineWaveform(waveform, sampleCount, randomGenerator);
@@ -1195,6 +1209,7 @@ public class WavetableGenerator {
             case SINGLECYCLE_ADDITIVE: return "additive";
             case SINGLECYCLE_FORMANT: return "formant";
             case SINGLECYCLE_CUSTOM: return "custom";
+            case SINGLECYCLE_EXPERIMENTAL: return "experimental";
             default: return "unknown";
         }
     }
@@ -1250,10 +1265,10 @@ public class WavetableGenerator {
      * Generates a sawtooth waveform.
      */
     private void generateSawWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
-        // Occasionally generate a reverse sawtooth
-        boolean reverse = randomGenerator.nextBoolean();
+        // Reverse sawtooth with 25% probability
+        boolean reverseDirection = randomGenerator.nextDouble() < 0.25;
         
-        if (!reverse) {
+        if (!reverseDirection) {
             // Standard sawtooth
             for (int i = 0; i < sampleCount; i++) {
                 waveform[i] = 2 * ((float) i / sampleCount) - 1;
@@ -1263,11 +1278,6 @@ public class WavetableGenerator {
             for (int i = 0; i < sampleCount; i++) {
                 waveform[i] = 1 - 2 * ((float) i / sampleCount);
             }
-        }
-        
-        // Occasionally add some slight rounding to reduce aliasing
-        if (randomGenerator.nextDouble() < 0.7) {
-            smoothWaveform(waveform, 2, sampleCount);
         }
     }
     
@@ -1391,5 +1401,25 @@ public class WavetableGenerator {
         // Normalize and ensure smooth looping
         normalizeWaveform(waveform);
         smoothLoopPoints(waveform);
+    }
+
+    /**
+     * Generates an experimental waveform using advanced algorithms.
+     */
+    private float[] generateExperimentalWaveform(int sampleCount, Random randomGenerator) {
+        // Create a new instance with the provided random seed
+        ExperimentalWaveformGenerator generator = new ExperimentalWaveformGenerator();
+        // The ExperimentalWaveformGenerator uses its own internal Random instance
+        
+        // Get the experimental waveform data
+        double[] waveformData = experimentalGenerator.generateExperimentalWaveform(sampleCount);
+        
+        // Convert double array to float array
+        float[] waveform = new float[sampleCount];
+        for (int i = 0; i < sampleCount; i++) {
+            waveform[i] = (float) waveformData[i];
+        }
+        
+        return waveform;
     }
 } 

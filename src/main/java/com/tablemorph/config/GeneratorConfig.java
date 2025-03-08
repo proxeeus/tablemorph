@@ -31,6 +31,8 @@ public class GeneratorConfig {
     private static final int DEFAULT_SINGLECYCLE_SAMPLES = 2048; // Default samples for single-cycle wavetable
     private static final String DEFAULT_SINGLECYCLE_DIRECTORY = "singlecycles"; // Directory for single-cycle wavetables
     
+    private static final double DEFAULT_EXPERIMENTAL_WAVEFORM_PROBABILITY = 0.3; // 30% chance of using experimental algorithms
+    
     // OS-specific default Vital wavetable directories
     private static final String DEFAULT_VITAL_WAVETABLES_MAC = System.getProperty("user.home") + 
         "/Music/Vital/User/Wavetables";
@@ -78,6 +80,7 @@ public class GeneratorConfig {
         // Set single-cycle defaults
         properties.setProperty("singlecycle.samples", String.valueOf(DEFAULT_SINGLECYCLE_SAMPLES));
         properties.setProperty("singlecycle.directory", DEFAULT_SINGLECYCLE_DIRECTORY);
+        properties.setProperty("experimentalWaveformProbability", String.valueOf(DEFAULT_EXPERIMENTAL_WAVEFORM_PROBABILITY));
         
         // Set OS-specific Vital directory
         String osName = System.getProperty("os.name").toLowerCase();
@@ -275,6 +278,28 @@ public class GeneratorConfig {
      */
     public static void setSingleCycleDirectory(String directory) {
         properties.setProperty("singlecycle.directory", directory);
+        saveConfig();
+    }
+    
+    /**
+     * Gets the probability of using experimental waveform generation algorithms.
+     * 
+     * @return Probability between 0.0 and 1.0 (0-100%)
+     */
+    public static double getExperimentalWaveformProbability() {
+        loadConfig();
+        return Double.parseDouble(properties.getProperty("experimentalWaveformProbability", 
+                String.valueOf(DEFAULT_EXPERIMENTAL_WAVEFORM_PROBABILITY)));
+    }
+    
+    /**
+     * Sets the probability of using experimental waveform generation algorithms.
+     * 
+     * @param probability Probability between 0.0 and 1.0 (0-100%)
+     */
+    public static void setExperimentalWaveformProbability(double probability) {
+        loadConfig();
+        properties.setProperty("experimentalWaveformProbability", String.valueOf(probability));
         saveConfig();
     }
 } 
