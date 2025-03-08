@@ -55,7 +55,7 @@ public class TableMorph {
                 displayMenu();
             }
         } catch (Exception e) {
-            System.out.println("\n❌ Error: " + e.getMessage());
+            System.out.println("\n[ERROR] " + e.getMessage());
             e.printStackTrace();
         } finally {
             scanner.close();
@@ -109,15 +109,15 @@ public class TableMorph {
     private static void displayMenu() {
         while (true) {
             System.out.println("\n╔════════════════════════════════════╗");
-            System.out.println("║            MAIN MENU               ║");
+            System.out.println("║            MAIN MENU              ║");
             System.out.println("╠════════════════════════════════════╣");
-            System.out.println("║  1. 🎵 Generate Wavetable          ║");
-            System.out.println("║  2. 🧬 Morph with Samples          ║");
-            System.out.println("║  3. 📦 Batch Generate Wavetables   ║");
-            System.out.println("║  4. 🧪 Batch Morph Wavetables      ║");
-            System.out.println("║  5. ℹ️  Wavetable Info             ║");
-            System.out.println("║  6. 🧙  Configuration              ║");
-            System.out.println("║  7. 👋  Quit                       ║");
+            System.out.println("║  1. [G] Generate Wavetable        ║");
+            System.out.println("║  2. [M] Morph with Samples        ║");
+            System.out.println("║  3. [B] Batch Generate Wavetables ║");
+            System.out.println("║  4. [X] Batch Morph Wavetables    ║");
+            System.out.println("║  5. [I] Wavetable Info            ║");
+            System.out.println("║  6. [C] Configuration             ║");
+            System.out.println("║  7. [Q] Quit                      ║");
             System.out.println("╚════════════════════════════════════╝");
             System.out.print("Enter your choice > ");
             
@@ -147,7 +147,7 @@ public class TableMorph {
                     System.exit(0);
                     break;
                 default:
-                    System.out.println("\n❌ Invalid option. Please try again.");
+                    System.out.println("\n[ERROR] Invalid option. Please try again.");
             }
         }
     }
@@ -158,15 +158,15 @@ public class TableMorph {
     private static void generateRandomWavetable() {
         try {
             Path wavetablePath = wavetableGenerator.generateRandomWavetable();
-            System.out.println("\n✅ New wavetable generated!");
-            System.out.println("📂 Location: " + wavetablePath.toAbsolutePath());
+            System.out.println("\n[SUCCESS] New wavetable generated!");
+            System.out.println("[FILE] Location: " + wavetablePath.toAbsolutePath());
             System.out.println("\nTo use this wavetable in VITAL:");
             System.out.println("1. Copy the .wav file to your VITAL wavetables folder");
             System.out.println("2. In VITAL, select an oscillator");
             System.out.println("3. Click the wavetable button");
             System.out.println("4. Choose 'Import' and select the .wav file");
         } catch (IOException e) {
-            System.out.println("\n❌ Error generating wavetable: " + e.getMessage());
+            System.out.println("\n[ERROR] Error generating wavetable: " + e.getMessage());
         }
     }
     
@@ -179,7 +179,7 @@ public class TableMorph {
         List<File> soundFiles = getSoundFiles();
         
         if (soundFiles.isEmpty()) {
-            System.out.println("\n❌ No WAV files found in the 'sounds' directory.");
+            System.out.println("\n[ERROR] No WAV files found in the 'sounds' directory.");
             System.out.println("Please add some WAV files to the 'sounds' directory first.");
             return;
         }
@@ -216,8 +216,8 @@ public class TableMorph {
                 MORPHS_DIRECTORY
             );
             
-            System.out.println("\n✅ Morphed wavetable generated!");
-            System.out.println("📂 Location: " + morphedPath.toAbsolutePath());
+            System.out.println("\n[SUCCESS] Morphed wavetable generated!");
+            System.out.println("[FILE] Location: " + morphedPath.toAbsolutePath());
             System.out.println("\nTo use this wavetable in VITAL:");
             System.out.println("1. Copy the .wav file to your VITAL wavetables folder");
             System.out.println("2. In VITAL, select an oscillator");
@@ -225,7 +225,7 @@ public class TableMorph {
             System.out.println("4. Choose 'Import' and select the .wav file");
             
         } catch (IOException e) {
-            System.out.println("\n❌ Error generating morphed wavetable: " + e.getMessage());
+            System.out.println("\n[ERROR] Error generating morphed wavetable: " + e.getMessage());
         }
     }
     
@@ -238,7 +238,7 @@ public class TableMorph {
         List<File> soundFiles = getSoundFiles();
         
         if (soundFiles.isEmpty()) {
-            System.out.println("\n❌ No WAV files found in the 'sounds' directory.");
+            System.out.println("\n[ERROR] No WAV files found in the 'sounds' directory.");
             System.out.println("Please add some WAV files to the 'sounds' directory first.");
             return;
         }
@@ -252,14 +252,14 @@ public class TableMorph {
         try {
             count = Integer.parseInt(scanner.nextLine().trim());
             if (count < 1) {
-                System.out.println("\n❌ Invalid number. Using 1 instead.");
+                System.out.println("\n[ERROR] Invalid number. Using 1 instead.");
                 count = 1;
             } else if (count > 100) {
-                System.out.println("\n❌ Maximum is 100. Using 100 instead.");
+                System.out.println("\n[ERROR] Maximum is 100. Using 100 instead.");
                 count = 100;
             }
         } catch (NumberFormatException e) {
-            System.out.println("\n❌ Invalid number. Using 5 as default.");
+            System.out.println("\n[ERROR] Invalid number. Using 5 as default.");
             count = 5;
         }
         
@@ -285,8 +285,8 @@ public class TableMorph {
                     seed
                 );
                 
-                System.out.println("✅ Done!");
-                System.out.println("  📂 " + morphedPath.getFileName());
+                System.out.println("[SUCCESS] Done!");
+                System.out.println("  [FILE] " + morphedPath.getFileName());
                 
                 // Brief pause between generations for better time-based seed uniqueness
                 if (i < count - 1) {
@@ -297,12 +297,12 @@ public class TableMorph {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("❌ Failed: " + e.getMessage());
+                System.out.println("[ERROR] Failed: " + e.getMessage());
             }
         }
         
-        System.out.println("\n✅ Batch morphing complete!");
-        System.out.println("📂 All morphed wavetables are saved in the 'morphs' directory");
+        System.out.println("\n[SUCCESS] Batch morphing complete!");
+        System.out.println("[FILE] All morphed wavetables are saved in the 'morphs' directory");
         
         System.out.println("\nPress Enter to continue...");
         scanner.nextLine();
@@ -372,14 +372,14 @@ public class TableMorph {
         try {
             count = Integer.parseInt(scanner.nextLine().trim());
             if (count < 1) {
-                System.out.println("\n❌ Invalid number. Using 1 instead.");
+                System.out.println("\n[ERROR] Invalid number. Using 1 instead.");
                 count = 1;
             } else if (count > 100) {
-                System.out.println("\n❌ Maximum is 100. Using 100 instead.");
+                System.out.println("\n[ERROR] Maximum is 100. Using 100 instead.");
                 count = 100;
             }
         } catch (NumberFormatException e) {
-            System.out.println("\n❌ Invalid number. Using 5 as default.");
+            System.out.println("\n[ERROR] Invalid number. Using 5 as default.");
             count = 5;
         }
         
@@ -397,8 +397,8 @@ public class TableMorph {
                 // Generate wavetable with unique seed
                 Path wavetablePath = wavetableGenerator.generateUniqueWavetable(seed);
                 
-                System.out.println("✅ Done!");
-                System.out.println("  📂 " + wavetablePath.getFileName());
+                System.out.println("[SUCCESS] Done!");
+                System.out.println("  [FILE] " + wavetablePath.getFileName());
                 
                 // Brief pause between generations for better time-based seed uniqueness
                 if (i < count - 1) {
@@ -409,12 +409,12 @@ public class TableMorph {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("❌ Failed: " + e.getMessage());
+                System.out.println("[ERROR] Failed: " + e.getMessage());
             }
         }
         
-        System.out.println("\n✅ Batch generation complete!");
-        System.out.println("📂 All wavetables are saved in the 'wavetables' directory");
+        System.out.println("\n[SUCCESS] Batch generation complete!");
+        System.out.println("[FILE] All wavetables are saved in the 'wavetables' directory");
         
         System.out.println("\nPress Enter to continue...");
         scanner.nextLine();
@@ -526,7 +526,7 @@ public class TableMorph {
                 case "4":
                     return;
                 default:
-                    System.out.println("\n❌ Invalid choice. Please try again.");
+                    System.out.println("\n[ERROR] Invalid choice. Please try again.");
             }
         }
     }
@@ -546,7 +546,7 @@ public class TableMorph {
             
         // Check if OS is supported
         if (!GeneratorConfig.isOSSupported()) {
-            System.out.println("\n❌ Your operating system is not currently supported for Vital integration.");
+            System.out.println("\n[ERROR] Your operating system is not currently supported for Vital integration.");
             System.out.println("Supported systems: macOS, Windows");
             System.out.println("\nPress Enter to continue...");
             scanner.nextLine();
@@ -566,7 +566,7 @@ public class TableMorph {
                 case "1":
                     boolean currentValue = GeneratorConfig.getSaveToVital();
                     GeneratorConfig.setSaveToVital(!currentValue);
-                    System.out.println("✓ Integration " + (!currentValue ? "enabled" : "disabled"));
+                    System.out.println("[OK] Integration " + (!currentValue ? "enabled" : "disabled"));
                     break;
                     
                 case "2":
@@ -579,9 +579,9 @@ public class TableMorph {
                         File directory = new File(newPath);
                         if (directory.exists() && directory.isDirectory()) {
                             GeneratorConfig.setVitalWavetablesDirectory(newPath);
-                            System.out.println("✓ Path updated");
+                            System.out.println("[OK] Path updated");
                         } else {
-                            System.out.println("❌ Invalid directory path. Directory does not exist.");
+                            System.out.println("[ERROR] Invalid directory path. Directory does not exist.");
                         }
                     }
                     break;
@@ -589,14 +589,14 @@ public class TableMorph {
                 case "3":
                     String defaultDir = GeneratorConfig.getDefaultVitalDirectory();
                     GeneratorConfig.setVitalWavetablesDirectory(defaultDir);
-                    System.out.println("✓ Reset to default directory: " + defaultDir);
+                    System.out.println("[OK] Reset to default directory: " + defaultDir);
                     break;
                     
                 case "4":
                     return;
                     
                 default:
-                    System.out.println("\n❌ Invalid choice. Please try again.");
+                    System.out.println("\n[ERROR] Invalid choice. Please try again.");
             }
         }
     }
@@ -631,12 +631,12 @@ public class TableMorph {
                         int frames = Integer.parseInt(scanner.nextLine().trim());
                         if (frames >= 4 && frames <= 256) {
                             GeneratorConfig.setWavetableFrames(frames);
-                            System.out.println("✓ Frame count updated to " + frames);
+                            System.out.println("[OK] Frame count updated to " + frames);
                         } else {
-                            System.out.println("❌ Invalid value. Frame count must be between 4 and 256.");
+                            System.out.println("[ERROR] Invalid value. Frame count must be between 4 and 256.");
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Invalid input. Please enter a number.");
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
                     }
                     break;
                     
@@ -649,12 +649,12 @@ public class TableMorph {
                         int samples = Integer.parseInt(scanner.nextLine().trim());
                         if (samples >= 256 && samples <= 8192 && (samples & (samples - 1)) == 0) {
                             GeneratorConfig.setWavetableSamples(samples);
-                            System.out.println("✓ Sample count updated to " + samples);
+                            System.out.println("[OK] Sample count updated to " + samples);
                         } else {
-                            System.out.println("❌ Invalid value. Sample count must be a power of 2 between 256 and 8192.");
+                            System.out.println("[ERROR] Invalid value. Sample count must be a power of 2 between 256 and 8192.");
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Invalid input. Please enter a number.");
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
                     }
                     break;
                     
@@ -662,7 +662,7 @@ public class TableMorph {
                     return;
                     
                 default:
-                    System.out.println("\n❌ Invalid choice. Please try again.");
+                    System.out.println("\n[ERROR] Invalid choice. Please try again.");
             }
         }
     }
@@ -697,12 +697,12 @@ public class TableMorph {
                         int maxSamples = Integer.parseInt(scanner.nextLine().trim());
                         if (maxSamples >= 1 && maxSamples <= 50) {
                             GeneratorConfig.setMaxMorphSamples(maxSamples);
-                            System.out.println("✓ Max morph samples updated to " + maxSamples);
+                            System.out.println("[OK] Max morph samples updated to " + maxSamples);
                         } else {
-                            System.out.println("❌ Invalid value. Must be between 1 and 50.");
+                            System.out.println("[ERROR] Invalid value. Must be between 1 and 50.");
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Invalid input. Please enter a number.");
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
                     }
                     break;
                     
@@ -715,12 +715,12 @@ public class TableMorph {
                         int probability = Integer.parseInt(scanner.nextLine().trim());
                         if (probability >= 0 && probability <= 100) {
                             GeneratorConfig.setFullSampleProbability(probability / 100.0);
-                            System.out.println("✓ Full sample probability updated to " + probability + "%");
+                            System.out.println("[OK] Full sample probability updated to " + probability + "%");
                         } else {
-                            System.out.println("❌ Invalid value. Must be between 0 and 100.");
+                            System.out.println("[ERROR] Invalid value. Must be between 0 and 100.");
                         }
                     } catch (NumberFormatException e) {
-                        System.out.println("❌ Invalid input. Please enter a number.");
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
                     }
                     break;
                     
@@ -728,7 +728,7 @@ public class TableMorph {
                     return;
                     
                 default:
-                    System.out.println("\n❌ Invalid choice. Please try again.");
+                    System.out.println("\n[ERROR] Invalid choice. Please try again.");
             }
         }
     }
