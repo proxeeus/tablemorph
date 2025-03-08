@@ -114,10 +114,12 @@ public class TableMorph {
             System.out.println("║  1. [G] Generate Wavetable        ║");
             System.out.println("║  2. [M] Morph with Samples        ║");
             System.out.println("║  3. [B] Batch Generate Wavetables ║");
-            System.out.println("║  4. [X] Batch Morph Wavetables    ║");
-            System.out.println("║  5. [I] Wavetable Info            ║");
-            System.out.println("║  6. [C] Configuration             ║");
-            System.out.println("║  7. [Q] Quit                      ║");
+            System.out.println("║  4. [X] Batch Morphed Wavetables    ║");
+            System.out.println("║  5. [S] Single-Cycle Wavetable    ║");
+            System.out.println("║  6. [C] Batch Single-Cycle        ║");
+            System.out.println("║  7. [I] Wavetable Info            ║");
+            System.out.println("║  8. [O] Configuration             ║");
+            System.out.println("║  9. [Q] Quit                      ║");
             System.out.println("╚════════════════════════════════════╝");
             System.out.print("Enter your choice > ");
             
@@ -137,12 +139,18 @@ public class TableMorph {
                     generateBatchMorphedWavetables();
                     break;
                 case "5":
-                    displayWavetableInfo();
+                    generateSingleCycleWavetable();
                     break;
                 case "6":
-                    displayConfigMenu();
+                    generateBatchSingleCycleWavetables();
                     break;
                 case "7":
+                    displayWavetableInfo();
+                    break;
+                case "8":
+                    displayConfigMenu();
+                    break;
+                case "9":
                     System.out.println("\nGoodbye! Thanks for using TableMorph!");
                     System.exit(0);
                     break;
@@ -426,14 +434,12 @@ public class TableMorph {
     private static void displayWavetableInfo() {
         int frames = GeneratorConfig.getWavetableFrames();
         int samples = GeneratorConfig.getWavetableSamples();
-        
-        // Create a formatted string for the frame and sample counts
-        String frameInfo = String.format("Each generated wavetable contains %d frames of %d samples", frames, samples);
+        int singleCycleSamples = GeneratorConfig.getSingleCycleSamples();
         
         System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
         System.out.println("║                    WAVETABLE INFORMATION                      ║");
         System.out.println("╠═══════════════════════════════════════════════════════════════╣");
-        System.out.println("║ " + frameInfo + getSpaces(51 - frameInfo.length()) + "║");
+        System.out.println("║ Each generated wavetable contains " + frames + " frames of " + samples + " samples   ║");
         System.out.println("║ each. These are designed to be compatible with the Vital      ║");
         System.out.println("║ synthesizer's wavetable format.                               ║");
         System.out.println("║                                                               ║");
@@ -441,6 +447,10 @@ public class TableMorph {
         System.out.println("║                                                               ║");
         System.out.println("║ • Standard Wavetables: Pure synthesis using algorithms        ║");
         System.out.println("║   Saved in the 'wavetables' directory                         ║");
+        System.out.println("║                                                               ║");
+        System.out.println("║ • Single-cycle Wavetables: Individual oscillator waveforms    ║");
+        System.out.println("║   Each with " + singleCycleSamples + " samples and various waveform types              ║");
+        System.out.println("║   Saved in the '" + GeneratorConfig.getSingleCycleDirectory() + "' directory                               ║");
         System.out.println("║                                                               ║");
         System.out.println("║ • Morphed Wavetables: Combines synthesis with audio samples   ║");
         System.out.println("║   Place audio samples in the 'sounds' directory               ║");
@@ -463,6 +473,7 @@ public class TableMorph {
         String wavetableDirPath = wavetableGenerator.getWavetableDirectoryPath();
         String soundsDirPath = new File(SOUNDS_DIRECTORY).getAbsolutePath();
         String morphsDirPath = new File(MORPHS_DIRECTORY).getAbsolutePath();
+        String singleCycleDirPath = wavetableGenerator.getSingleCycleDirectoryPath();
 
         // Ensure formatting will work by limiting path length if needed
         int maxPathLength = 50; // Maximum characters that can fit in the line
@@ -475,8 +486,12 @@ public class TableMorph {
         if (morphsDirPath.length() > maxPathLength) {
             morphsDirPath = "..." + morphsDirPath.substring(morphsDirPath.length() - maxPathLength + 3);
         }
+        if (singleCycleDirPath.length() > maxPathLength) {
+            singleCycleDirPath = "..." + singleCycleDirPath.substring(singleCycleDirPath.length() - maxPathLength + 3);
+        }
 
         System.out.println("║ Standard directory: " + wavetableDirPath + getSpaces(maxPathLength - wavetableDirPath.length()) + " ║");
+        System.out.println("║ Single-cycle directory: " + singleCycleDirPath + getSpaces(maxPathLength - singleCycleDirPath.length() - 6) + " ║");
         System.out.println("║ Samples directory: " + soundsDirPath + getSpaces(maxPathLength - soundsDirPath.length() + 1) + " ║");
         System.out.println("║ Morphs directory: " + morphsDirPath + getSpaces(maxPathLength - morphsDirPath.length() + 2) + " ║");
         System.out.println("╚═══════════════════════════════════════════════════════════════╝");
@@ -505,9 +520,10 @@ public class TableMorph {
             System.out.println("║         CONFIGURATION              ║");
             System.out.println("╠════════════════════════════════════╣");
             System.out.println("║  1. Wavetable Settings            ║");
-            System.out.println("║  2. Morphing Settings             ║");
-            System.out.println("║  3. Vital Integration             ║");
-            System.out.println("║  4. Back to Main Menu             ║");
+            System.out.println("║  2. Single-Cycle Settings         ║");
+            System.out.println("║  3. Morphing Settings             ║");
+            System.out.println("║  4. Vital Integration             ║");
+            System.out.println("║  5. Back to Main Menu             ║");
             System.out.println("╚════════════════════════════════════╝");
             
             System.out.print("Enter your choice > ");
@@ -518,12 +534,15 @@ public class TableMorph {
                     configureWavetableSettings();
                     break;
                 case "2":
-                    configureMorphSettings();
+                    configureSingleCycleSettings();
                     break;
                 case "3":
-                    configureVitalIntegration();
+                    configureMorphSettings();
                     break;
                 case "4":
+                    configureVitalIntegration();
+                    break;
+                case "5":
                     return;
                 default:
                     System.out.println("\n[ERROR] Invalid choice. Please try again.");
@@ -730,6 +749,115 @@ public class TableMorph {
                 default:
                     System.out.println("\n[ERROR] Invalid choice. Please try again.");
             }
+        }
+    }
+
+    /**
+     * Configures single-cycle wavetable generation settings.
+     */
+    private static void configureSingleCycleSettings() {
+        while (true) {
+            System.out.println("\n╔════════════════════════════════════╗");
+            System.out.println("║    SINGLE-CYCLE SETTINGS          ║");
+            System.out.println("╠════════════════════════════════════╣");
+            System.out.println("║  1. Sample Count                  ║");
+            System.out.println("║  2. Back to Configuration Menu    ║");
+            System.out.println("╚════════════════════════════════════╝");
+            
+            System.out.println("\nCurrent Settings:");
+            System.out.println("1. Sample Count: " + GeneratorConfig.getSingleCycleSamples());
+            
+            System.out.print("\nEnter your choice (1-2) > ");
+            String choice = scanner.nextLine().trim();
+            
+            switch (choice) {
+                case "1":
+                    System.out.println("\nThe sample count determines the resolution of each single-cycle wavetable.");
+                    System.out.println("Higher values create more detailed waveforms but result in larger files.");
+                    System.out.println("Common values: 1024, 2048, 4096");
+                    System.out.print("\nEnter new sample count (256-8192, must be a power of 2): ");
+                    try {
+                        int samples = Integer.parseInt(scanner.nextLine().trim());
+                        if (samples >= 256 && samples <= 8192 && (samples & (samples - 1)) == 0) {
+                            GeneratorConfig.setSingleCycleSamples(samples);
+                            System.out.println("[OK] Sample count updated to " + samples);
+                        } else {
+                            System.out.println("[ERROR] Invalid value. Sample count must be a power of 2 between 256 and 8192.");
+                        }
+                    } catch (NumberFormatException e) {
+                        System.out.println("[ERROR] Invalid input. Please enter a number.");
+                    }
+                    break;
+                    
+                case "2":
+                    return;
+                    
+                default:
+                    System.out.println("\n[ERROR] Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    /**
+     * Generates a single-cycle wavetable with a random waveform type.
+     */
+    private static void generateSingleCycleWavetable() {
+        try {
+            // Create directory if it doesn't exist
+            wavetableGenerator.createSingleCycleDirectory();
+            
+            // Generate the single-cycle wavetable
+            Path wavetablePath = wavetableGenerator.generateRandomSingleCycleWavetable();
+            System.out.println("\n[SUCCESS] New single-cycle wavetable generated!");
+            System.out.println("[FILE] Location: " + wavetablePath.toAbsolutePath());
+            System.out.println("\nTo use this wavetable in VITAL:");
+            System.out.println("1. Copy the .wav file to your VITAL wavetables folder");
+            System.out.println("2. In VITAL, select an oscillator");
+            System.out.println("3. Click the wavetable button");
+            System.out.println("4. Choose 'Import' and select the .wav file");
+        } catch (IOException e) {
+            System.out.println("\n[ERROR] Error generating single-cycle wavetable: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Batch generates multiple single-cycle wavetables.
+     */
+    private static void generateBatchSingleCycleWavetables() {
+        // Create directory if it doesn't exist
+        wavetableGenerator.createSingleCycleDirectory();
+        
+        // Get number of wavetables to generate
+        System.out.print("\nHow many single-cycle wavetables to generate? (1-100): ");
+        int count = 5; // Default value
+        
+        try {
+            count = Integer.parseInt(scanner.nextLine().trim());
+            if (count < 1) {
+                System.out.println("\n[ERROR] Invalid number. Using 1 instead.");
+                count = 1;
+            } else if (count > 100) {
+                System.out.println("\n[ERROR] Maximum is 100. Using 100 instead.");
+                count = 100;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("\n[ERROR] Invalid number. Using 5 as default.");
+        }
+        
+        System.out.println("\nGenerating " + count + " single-cycle wavetables...");
+        
+        // Generate single-cycle wavetables
+        try {
+            List<Path> generatedFiles = wavetableGenerator.batchGenerateSingleCycleWavetables(count);
+            
+            System.out.println("\n[SUCCESS] Batch generation complete!");
+            System.out.println("[FILE] All single-cycle wavetables are saved in the '" + 
+                GeneratorConfig.getSingleCycleDirectory() + "' directory");
+            
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+        } catch (IOException e) {
+            System.out.println("\n[ERROR] Error during batch generation: " + e.getMessage());
         }
     }
 } 

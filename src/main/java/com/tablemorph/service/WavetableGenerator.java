@@ -31,15 +31,40 @@ public class WavetableGenerator {
     public static final int MORPH_TYPE_FOLD = 4;    // Apply waveshaping to sample data
     public static final int MORPH_TYPE_SPECTRAL = 5; // Mix in spectral domain
     
+    // Single-cycle waveform type constants
+    public static final int SINGLECYCLE_SINE = 0;
+    public static final int SINGLECYCLE_TRIANGLE = 1;
+    public static final int SINGLECYCLE_SAW = 2;
+    public static final int SINGLECYCLE_SQUARE = 3;
+    public static final int SINGLECYCLE_NOISE = 4;
+    public static final int SINGLECYCLE_FM = 5;
+    public static final int SINGLECYCLE_ADDITIVE = 6;
+    public static final int SINGLECYCLE_FORMANT = 7;
+    public static final int SINGLECYCLE_CUSTOM = 8;
+    
     private final Random random = new Random();
 
     /**
      * Creates the wavetables directory if it doesn't exist.
      */
     public void createWavetableDirectory() {
-        File wavetableDir = new File(WAVETABLE_DIRECTORY);
-        if (!wavetableDir.exists()) {
-            wavetableDir.mkdir();
+        createDirectoryIfNotExists(WAVETABLE_DIRECTORY);
+    }
+    
+    /**
+     * Creates the single-cycle wavetables directory if it doesn't exist.
+     */
+    public void createSingleCycleDirectory() {
+        createDirectoryIfNotExists(GeneratorConfig.getSingleCycleDirectory());
+    }
+    
+    /**
+     * Creates a directory if it doesn't exist.
+     */
+    private void createDirectoryIfNotExists(String directoryPath) {
+        File directory = new File(directoryPath);
+        if (!directory.exists()) {
+            directory.mkdir();
         }
     }
 
@@ -48,6 +73,13 @@ public class WavetableGenerator {
      */
     public String getWavetableDirectoryPath() {
         return new File(WAVETABLE_DIRECTORY).getAbsolutePath();
+    }
+    
+    /**
+     * Gets the single-cycle wavetable directory path.
+     */
+    public String getSingleCycleDirectoryPath() {
+        return new File(GeneratorConfig.getSingleCycleDirectory()).getAbsolutePath();
     }
 
     /**
@@ -954,21 +986,405 @@ public class WavetableGenerator {
     }
 
     /**
-     * Ensures smooth loop points in a waveform by applying crossfading.
+     * Smooths the loop points of a waveform to ensure seamless looping.
      */
     private void smoothLoopPoints(float[] waveform) {
-        int crossfadeLength = Math.min(waveform.length / 8, 64);  // Up to 64 samples or 1/8 of length
+        int length = waveform.length;
+        int smoothRadius = Math.min(32, length / 16); // Max 32 samples or 1/16 of length
         
-        // Apply crossfade between start and end
-        for (int i = 0; i < crossfadeLength; i++) {
-            float fadeIn = i / (float) crossfadeLength;
-            float fadeOut = 1 - fadeIn;
+        // Create a temporary buffer for the smoothed result
+        float[] smoothed = new float[length];
+        System.arraycopy(waveform, 0, smoothed, 0, length);
+        
+        // Apply crossfade at the loop points
+        for (int i = 0; i < smoothRadius; i++) {
+            float ratio = (float) i / smoothRadius;
             
-            float startSample = waveform[i];
-            float endSample = waveform[waveform.length - crossfadeLength + i];
+            // Blend the end with the beginning
+            smoothed[i] = waveform[i] * ratio + waveform[length - smoothRadius + i] * (1 - ratio);
             
-            waveform[i] = startSample * fadeIn + endSample * fadeOut;
-            waveform[waveform.length - crossfadeLength + i] = startSample * fadeOut + endSample * fadeIn;
+            // Blend the beginning with the end
+            smoothed[length - smoothRadius + i] = waveform[length - smoothRadius + i] * ratio + 
+                                               waveform[i] * (1 - ratio);
         }
+        
+        // Copy back to the original waveform
+        System.arraycopy(smoothed, 0, waveform, 0, length);
+    }
+
+    /**
+     * Generates a single-cycle wavetable with a random waveform type.
+     */
+    public Path generateRandomSingleCycleWavetable() throws IOException {
+        return generateSingleCycleWavetable(random.nextInt(SINGLECYCLE_CUSTOM), System.currentTimeMillis());
+    }
+    
+    /**
+     * Generates a single-cycle wavetable with the specified waveform type and seed.
+     */
+    public Path generateSingleCycleWavetable(int waveformType, long seed) throws IOException {
+        createSingleCycleDirectory();
+        
+        // Create seeded random generator for consistent results with the same seed
+        Random seededRandom = new Random(seed);
+        
+        // Generate unique filename
+        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMAT);
+        String waveformName = getSingleCycleWaveformName(waveformType);
+        String filename = "singlecycle_" + waveformName + "_" + timestamp + "_" + 
+            Math.abs(seededRandom.nextInt(10000)) + ".wav";
+        
+        String singleCycleDir = GeneratorConfig.getSingleCycleDirectory();
+        Path outputPath = Paths.get(singleCycleDir, filename);
+        
+        // Generate single-cycle wavetable data
+        byte[] wavetableData = generateSingleCycleWavetableData(waveformType, seededRandom);
+        
+        // Write to file
+        saveWavetableToFile(wavetableData, outputPath);
+        
+        // If enabled, also save to Vital's directory
+        if (GeneratorConfig.getSaveToVital() && GeneratorConfig.isOSSupported()) {
+            String vitalDir = GeneratorConfig.getVitalWavetablesDirectory();
+            if (!vitalDir.isEmpty()) {
+                // Create Vital directory if it doesn't exist
+                File vitalDirectory = new File(vitalDir);
+                if (!vitalDirectory.exists()) {
+                    vitalDirectory.mkdirs();
+                }
+                
+                Path vitalPath = Paths.get(vitalDir, filename);
+                try {
+                    saveWavetableToFile(wavetableData, vitalPath);
+                    System.out.println("[OK] Also saved to Vital's wavetables directory: " + vitalPath);
+                } catch (IOException e) {
+                    System.out.println("[ERROR] Could not save to Vital's directory: " + e.getMessage());
+                }
+            }
+        }
+        
+        return outputPath;
+    }
+    
+    /**
+     * Batch generates multiple single-cycle wavetables.
+     */
+    public List<Path> batchGenerateSingleCycleWavetables(int count) throws IOException {
+        List<Path> generatedFiles = new ArrayList<>();
+        
+        for (int i = 0; i < count; i++) {
+            // Generate a unique seed based on current time and iteration
+            long seed = System.currentTimeMillis() + i;
+            
+            // Choose a random waveform type for each iteration
+            int waveformType = random.nextInt(SINGLECYCLE_CUSTOM);
+            
+            // Generate the wavetable
+            Path path = generateSingleCycleWavetable(waveformType, seed);
+            generatedFiles.add(path);
+            
+            // Brief pause between generations for better time-based seed uniqueness
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        return generatedFiles;
+    }
+    
+    /**
+     * Generates the single-cycle wavetable data.
+     */
+    private byte[] generateSingleCycleWavetableData(int waveformType, Random randomGenerator) {
+        int sampleCount = GeneratorConfig.getSingleCycleSamples();
+        float[] waveform = generateSingleCycleWaveform(waveformType, sampleCount, randomGenerator);
+        
+        // Ensure proper normalization and smoothing
+        normalizeWaveform(waveform);
+        smoothLoopPoints(waveform);
+        
+        // Convert to PCM data
+        return convertSingleCycleToPCM(waveform);
+    }
+    
+    /**
+     * Converts a single-cycle waveform to PCM byte data.
+     */
+    private byte[] convertSingleCycleToPCM(float[] waveform) {
+        int sampleCount = waveform.length;
+        byte[] pcmData = new byte[sampleCount * 2]; // 16-bit = 2 bytes per sample
+        
+        for (int i = 0; i < sampleCount; i++) {
+            // Convert float [-1.0, 1.0] to 16-bit PCM
+            short sample = (short) (waveform[i] * 32767);
+            
+            // Write sample in little-endian format
+            pcmData[i * 2] = (byte) (sample & 0xFF);
+            pcmData[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+        }
+        
+        return pcmData;
+    }
+    
+    /**
+     * Generates a single-cycle waveform based on the specified type.
+     */
+    private float[] generateSingleCycleWaveform(int waveformType, int sampleCount, Random randomGenerator) {
+        float[] waveform = new float[sampleCount];
+        
+        switch (waveformType) {
+            case SINGLECYCLE_SINE:
+                generateSineWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_TRIANGLE:
+                generateTriangleWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_SAW:
+                generateSawWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_SQUARE:
+                generateSquareWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_NOISE:
+                generateNoiseWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_FM:
+                generateFMWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_ADDITIVE:
+                generateAdditiveWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            case SINGLECYCLE_FORMANT:
+                generateFormantWaveform(waveform, sampleCount, randomGenerator);
+                break;
+                
+            default:
+                // Default to sine wave if unknown type
+                generateSineWaveform(waveform, sampleCount, randomGenerator);
+                break;
+        }
+        
+        return waveform;
+    }
+    
+    /**
+     * Gets the name of the single-cycle waveform type.
+     */
+    private String getSingleCycleWaveformName(int waveformType) {
+        switch (waveformType) {
+            case SINGLECYCLE_SINE: return "sine";
+            case SINGLECYCLE_TRIANGLE: return "triangle";
+            case SINGLECYCLE_SAW: return "saw";
+            case SINGLECYCLE_SQUARE: return "square";
+            case SINGLECYCLE_NOISE: return "noise";
+            case SINGLECYCLE_FM: return "fm";
+            case SINGLECYCLE_ADDITIVE: return "additive";
+            case SINGLECYCLE_FORMANT: return "formant";
+            case SINGLECYCLE_CUSTOM: return "custom";
+            default: return "unknown";
+        }
+    }
+    
+    /**
+     * Generates a sine waveform.
+     */
+    private void generateSineWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Add some randomness to the phase
+        double phaseOffset = randomGenerator.nextDouble() * Math.PI * 2;
+        
+        for (int i = 0; i < sampleCount; i++) {
+            waveform[i] = (float) Math.sin(2 * Math.PI * i / sampleCount + phaseOffset);
+        }
+        
+        // Occasionally add harmonics for variation
+        if (randomGenerator.nextDouble() < 0.3) {
+            double harmonicPhase = randomGenerator.nextDouble() * Math.PI * 2;
+            int harmonicNumber = randomGenerator.nextInt(5) + 2; // Between 2-6th harmonic
+            float harmonicAmount = 0.1f + randomGenerator.nextFloat() * 0.2f; // 10-30% volume
+            
+            for (int i = 0; i < sampleCount; i++) {
+                waveform[i] += harmonicAmount * 
+                    (float) Math.sin(2 * Math.PI * harmonicNumber * i / sampleCount + harmonicPhase);
+            }
+            
+            // Re-normalize
+            normalizeWaveform(waveform);
+        }
+    }
+    
+    /**
+     * Generates a triangle waveform.
+     */
+    private void generateTriangleWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Add some randomness to the slope
+        float slope = 0.4f + randomGenerator.nextFloat() * 0.2f; // Between 0.4-0.6
+        
+        for (int i = 0; i < sampleCount; i++) {
+            float phase = (float) i / sampleCount;
+            waveform[i] = (phase < slope) ? 
+                (2 * phase / slope - 1) : 
+                (2 * (1 - phase) / (1 - slope) - 1);
+        }
+        
+        // Occasionally add slightly rounded corners
+        if (randomGenerator.nextDouble() < 0.5) {
+            smoothWaveform(waveform, 3, sampleCount);
+        }
+    }
+    
+    /**
+     * Generates a sawtooth waveform.
+     */
+    private void generateSawWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Occasionally generate a reverse sawtooth
+        boolean reverse = randomGenerator.nextBoolean();
+        
+        if (!reverse) {
+            // Standard sawtooth
+            for (int i = 0; i < sampleCount; i++) {
+                waveform[i] = 2 * ((float) i / sampleCount) - 1;
+            }
+        } else {
+            // Reverse sawtooth
+            for (int i = 0; i < sampleCount; i++) {
+                waveform[i] = 1 - 2 * ((float) i / sampleCount);
+            }
+        }
+        
+        // Occasionally add some slight rounding to reduce aliasing
+        if (randomGenerator.nextDouble() < 0.7) {
+            smoothWaveform(waveform, 2, sampleCount);
+        }
+    }
+    
+    /**
+     * Generates a square waveform.
+     */
+    private void generateSquareWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Add some randomness to the pulse width
+        float pulseWidth = 0.3f + randomGenerator.nextFloat() * 0.4f; // Between 0.3-0.7
+        
+        for (int i = 0; i < sampleCount; i++) {
+            waveform[i] = ((float) i / sampleCount < pulseWidth) ? 1.0f : -1.0f;
+        }
+        
+        // Occasionally add some slight rounding to reduce aliasing
+        if (randomGenerator.nextDouble() < 0.7) {
+            smoothWaveform(waveform, 4, sampleCount);
+        }
+    }
+    
+    /**
+     * Generates a noise waveform.
+     */
+    private void generateNoiseWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        for (int i = 0; i < sampleCount; i++) {
+            waveform[i] = randomGenerator.nextFloat() * 2 - 1;
+        }
+        
+        // Smooth the noise to create a more usable wavetable
+        int smoothAmount = 2 + randomGenerator.nextInt(5); // Between 2-6
+        smoothWaveform(waveform, smoothAmount, sampleCount);
+        
+        // Ensure end points match for perfect looping
+        smoothLoopPoints(waveform);
+    }
+    
+    /**
+     * Generates an FM waveform.
+     */
+    private void generateFMWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Randomize FM parameters
+        float carrierFreq = 1.0f;
+        float modFreq = 1.0f + randomGenerator.nextInt(4); // 1-4
+        float modIndex = 0.5f + randomGenerator.nextFloat() * 4.5f; // 0.5-5.0
+        
+        for (int i = 0; i < sampleCount; i++) {
+            float t = (float) i / sampleCount;
+            float modulator = (float) Math.sin(2 * Math.PI * modFreq * t);
+            waveform[i] = (float) Math.sin(2 * Math.PI * carrierFreq * t + modIndex * modulator);
+        }
+    }
+    
+    /**
+     * Generates an additive synthesis waveform.
+     */
+    private void generateAdditiveWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Decide how many harmonics to include
+        int numHarmonics = 3 + randomGenerator.nextInt(8); // 3-10 harmonics
+        
+        for (int i = 0; i < sampleCount; i++) {
+            float t = (float) i / sampleCount;
+            float value = 0;
+            
+            for (int h = 1; h <= numHarmonics; h++) {
+                // Randomize amplitude of each harmonic
+                float amplitude = 1.0f / h; // Basic harmonic falloff
+                
+                // Randomize amplitude further
+                amplitude *= 0.7f + randomGenerator.nextFloat() * 0.6f; // 0.7-1.3 range
+                
+                // Randomize phase
+                float phase = randomGenerator.nextFloat() * (float)Math.PI * 2;
+                
+                value += amplitude * (float) Math.sin(2 * Math.PI * h * t + phase);
+            }
+            
+            waveform[i] = value;
+        }
+        
+        // Normalize the result
+        normalizeWaveform(waveform);
+    }
+    
+    /**
+     * Generates a formant waveform.
+     */
+    private void generateFormantWaveform(float[] waveform, int sampleCount, Random randomGenerator) {
+        // Create base waveform (usually a pulse or a saw)
+        if (randomGenerator.nextBoolean()) {
+            // Pulse wave base
+            generateSquareWaveform(waveform, sampleCount, randomGenerator);
+        } else {
+            // Saw wave base
+            generateSawWaveform(waveform, sampleCount, randomGenerator);
+        }
+        
+        // Apply formant filtering
+        float[] filtered = new float[sampleCount];
+        System.arraycopy(waveform, 0, filtered, 0, sampleCount);
+        
+        // Randomly choose 2-3 formant peaks
+        int numFormants = 2 + randomGenerator.nextInt(2);
+        
+        for (int f = 0; f < numFormants; f++) {
+            // Randomize formant frequency and width
+            float formantFreq = 0.05f + randomGenerator.nextFloat() * 0.3f; // 0.05-0.35 norm freq
+            float formantWidth = 0.01f + randomGenerator.nextFloat() * 0.05f; // 0.01-0.06 norm width
+            float formantGain = 0.5f + randomGenerator.nextFloat() * 1.5f; // 0.5-2.0 gain
+            
+            // Apply formant peak
+            for (int i = 0; i < sampleCount; i++) {
+                float t = (float) i / sampleCount;
+                filtered[i] += waveform[i] * formantGain * 
+                    (float) Math.exp(-Math.pow((t - formantFreq) / formantWidth, 2));
+            }
+        }
+        
+        // Copy filtered result back
+        System.arraycopy(filtered, 0, waveform, 0, sampleCount);
+        
+        // Normalize and ensure smooth looping
+        normalizeWaveform(waveform);
+        smoothLoopPoints(waveform);
     }
 } 

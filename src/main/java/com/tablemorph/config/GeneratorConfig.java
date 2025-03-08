@@ -21,6 +21,10 @@ public class GeneratorConfig {
     private static final int DEFAULT_MAX_MORPH_SAMPLES = 10; // Default max number of sample files to use
     private static final double DEFAULT_FULL_SAMPLE_PROBABILITY = 0.3; // 30% chance of using complete samples
     
+    // Single-cycle wavetable defaults
+    private static final int DEFAULT_SINGLECYCLE_SAMPLES = 2048; // Default samples for single-cycle wavetable
+    private static final String DEFAULT_SINGLECYCLE_DIRECTORY = "singlecycles"; // Directory for single-cycle wavetables
+    
     // OS-specific default Vital wavetable directories
     private static final String DEFAULT_VITAL_WAVETABLES_MAC = System.getProperty("user.home") + 
         "/Music/Vital/User/Wavetables";
@@ -64,6 +68,10 @@ public class GeneratorConfig {
         properties.setProperty("wavetable.morph.max_samples", String.valueOf(DEFAULT_MAX_MORPH_SAMPLES));
         properties.setProperty("wavetable.morph.full_sample_probability", 
             String.valueOf(DEFAULT_FULL_SAMPLE_PROBABILITY));
+        
+        // Set single-cycle defaults
+        properties.setProperty("singlecycle.samples", String.valueOf(DEFAULT_SINGLECYCLE_SAMPLES));
+        properties.setProperty("singlecycle.directory", DEFAULT_SINGLECYCLE_DIRECTORY);
         
         // Set OS-specific Vital directory
         String osName = System.getProperty("os.name").toLowerCase();
@@ -231,5 +239,36 @@ public class GeneratorConfig {
     public static boolean isOSSupported() {
         String osName = System.getProperty("os.name").toLowerCase();
         return osName.contains("mac") || osName.contains("windows");
+    }
+    
+    /**
+     * Gets the number of samples per single-cycle wavetable.
+     */
+    public static int getSingleCycleSamples() {
+        return Integer.parseInt(properties.getProperty("singlecycle.samples", 
+            String.valueOf(DEFAULT_SINGLECYCLE_SAMPLES)));
+    }
+    
+    /**
+     * Sets the number of samples per single-cycle wavetable.
+     */
+    public static void setSingleCycleSamples(int samples) {
+        properties.setProperty("singlecycle.samples", String.valueOf(samples));
+        saveConfig();
+    }
+    
+    /**
+     * Gets the directory for single-cycle wavetables.
+     */
+    public static String getSingleCycleDirectory() {
+        return properties.getProperty("singlecycle.directory", DEFAULT_SINGLECYCLE_DIRECTORY);
+    }
+    
+    /**
+     * Sets the directory for single-cycle wavetables.
+     */
+    public static void setSingleCycleDirectory(String directory) {
+        properties.setProperty("singlecycle.directory", directory);
+        saveConfig();
     }
 } 
