@@ -6,12 +6,26 @@ TableMorph is a powerful wavetable generator designed specifically for the [Vita
 
 ## Features
 
-- **Random Wavetable Generation**: Create unique wavetables with various harmonic structures
-- **Single-Cycle Wavetables**: Generate individual oscillator waveforms with various types (sine, saw, square, triangle, FM, additive, formant)
-- **Sample Morphing**: Blend your audio samples with generated wavetables
+- **Advanced Wavetable Generation**: Create complex wavetables with rich harmonic content and unique timbres
+- **High-Variability Morphing Algorithms**: Five distinct morphing techniques with dynamic randomization for truly unique results
+- **Single-Cycle Wavetables**: Generate oscillator waveforms with various types (sine, saw, square, triangle, FM, additive, formant)
+- **Sample Morphing**: Blend your audio samples with generated wavetables using advanced spectral processing
+- **Multi-Synthesis Techniques**: Utilizes additive, FM, phase distortion, waveshaping and spectral synthesis methods
 - **Batch Processing**: Generate multiple wavetables or single-cycle waveforms at once
 - **Direct Vital Integration**: Save wavetables directly to Vital's wavetable directory
 - **Customizable Settings**: Configure frame count, sample count, and morphing parameters
+
+## Morphing Algorithms
+
+TableMorph features five sophisticated morphing algorithms:
+
+- **Simple Blending**: Non-linear blending with dynamic intensity and phase modulation
+- **Additive**: Selective harmonic processing with independent phase manipulation
+- **Harmonic**: Frequency-dependent structural modifications based on sample characteristics
+- **Wave Folding**: Adaptive waveshaping with multiple folding thresholds and saturation
+- **Spectral**: Multi-band frequency transformations with independent processing per band
+
+Each algorithm ensures unique results even with similar input parameters through multiple layers of controlled randomization.
 
 ## Requirements
 

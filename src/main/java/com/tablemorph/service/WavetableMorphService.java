@@ -21,6 +21,19 @@ import com.tablemorph.util.WaveformUtil;
 
 /**
  * Service class for morphing wavetables with audio samples.
+ * <p>
+ * This service provides advanced wavetable morphing capabilities that generate highly
+ * varied and unique sound textures by combining multiple generation techniques:
+ * <ul>
+ *   <li>Complex, randomized base waveform generation using multiple synthesis methods</li>
+ *   <li>Non-linear morphing algorithms with variable intensity and direction</li>
+ *   <li>Dynamic sample integration with multiple processing techniques</li>
+ *   <li>Frame-by-frame variation control with independent randomization</li>
+ *   <li>Advanced waveshaping and spectral transformations</li>
+ * </ul>
+ * <p>
+ * The morphing process ensures each generated wavetable is unique by applying
+ * varying degrees of randomization at every stage of the generation process.
  */
 public class WavetableMorphService {
     private static final String MORPHS_DIRECTORY = "morphs";
@@ -47,6 +60,18 @@ public class WavetableMorphService {
     
     /**
      * Generates a morphed wavetable with specific seed and output directory.
+     * <p>
+     * This method creates a unique wavetable by:
+     * <ol>
+     *   <li>Extracting and processing audio samples from the provided sound files</li>
+     *   <li>Generating complex base waveforms using multiple synthesis techniques</li>
+     *   <li>Applying advanced morphing algorithms with high variability</li>
+     *   <li>Saving the result as a wavetable compatible with the Vital synthesizer</li>
+     * </ol>
+     * <p>
+     * Each generated wavetable will have distinct characteristics even with the same
+     * input parameters due to multiple layers of controlled randomization throughout
+     * the generation process.
      * 
      * @param morphType The type of morphing algorithm to use
      * @param soundFiles List of audio files to use for morphing
@@ -286,13 +311,26 @@ public class WavetableMorphService {
     }
     
     /**
-     * Generates a random waveform for a specific frame.
+     * Generates a base waveform for a specific frame in the wavetable.
+     * <p>
+     * This method creates highly varied waveforms using multiple synthesis strategies:
+     * <ul>
+     *   <li>Additive synthesis with randomized harmonic content</li>
+     *   <li>Frequency modulation with dynamic carrier/modulator relationships</li>
+     *   <li>Wavefolding and distortion with variable intensity</li>
+     *   <li>Phase distortion with non-linear transfer functions</li>
+     *   <li>Complex spectral processing with multiple frequency bands</li>
+     * </ul>
+     * <p>
+     * Frame position influences the complexity and character of the waveform with
+     * non-linear scaling and randomized variance to ensure unique results between
+     * generations.
      * 
-     * @param frame The frame index
+     * @param frame The current frame number
      * @param frameCount The total number of frames
-     * @param sampleCount The number of samples per frame
-     * @param randomGenerator The random number generator to use
-     * @return The generated waveform
+     * @param sampleCount The number of samples in each frame
+     * @param randomGenerator The random number generator
+     * @return A float array containing the waveform data
      */
     private float[] generateFrameWaveform(int frame, int frameCount, int sampleCount, Random randomGenerator) {
         float[] waveform = new float[sampleCount];
@@ -752,15 +790,28 @@ public class WavetableMorphService {
     }
     
     /**
-     * Creates a morphed frame by combining the generated waveform with sample data.
+     * Creates a morphed frame by combining a base waveform with sample data.
+     * <p>
+     * This method applies advanced morphing algorithms with high variability:
+     * <ul>
+     *   <li>Dynamic morphing amount with randomized variance and possible direction inversion</li>
+     *   <li>Non-linear blending using variable curves and modulation</li>
+     *   <li>Selective harmonic interactions with randomized phase relationships</li>
+     *   <li>Adaptive waveshaping with multiple intensity levels</li>
+     *   <li>Multi-band spectral processing with independent frequency control</li>
+     * </ul>
+     * <p>
+     * Each morphing algorithm (BLEND, ADDITIVE, HARMONIC, FOLD, SPECTRAL) implements unique
+     * transformation techniques with built-in randomization to ensure diverse results
+     * even with similar input parameters.
      * 
-     * @param morphType The type of morphing algorithm to use
+     * @param morphType The morphing algorithm to use
      * @param baseWaveform The base waveform to morph
-     * @param sampleData The sample data to morph with
-     * @param frame The frame index
+     * @param sampleData The sample data to incorporate
+     * @param frame The current frame number
      * @param frameCount The total number of frames
-     * @param randomGenerator The random number generator to use
-     * @return The morphed waveform
+     * @param randomGenerator The random number generator
+     * @return A float array containing the morphed waveform data
      */
     private float[] createMorphedFrame(MorphType morphType, float[] baseWaveform, float[] sampleData,
                                      int frame, int frameCount, Random randomGenerator) {

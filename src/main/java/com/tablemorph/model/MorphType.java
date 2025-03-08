@@ -2,13 +2,16 @@ package com.tablemorph.model;
 
 /**
  * Enumeration of available morphing algorithms.
+ * <p>
+ * Each algorithm implements a different approach to combining generated wavetables 
+ * with sample data, producing unique sonic textures with varying characteristics.
  */
 public enum MorphType {
-    BLEND(1, "Simple Blending", "Simple blending between generated and sample data"),
-    ADDITIVE(2, "Additive", "Add sample data to generated data"),
-    HARMONIC(3, "Harmonic", "Use sample data to influence harmonic content"),
-    FOLD(4, "Wave Folding", "Apply waveshaping to sample data"),
-    SPECTRAL(5, "Spectral", "Mix in spectral domain");
+    BLEND(1, "Simple Blending", "Non-linear blending of waveforms with dynamic intensity and phase modulation"),
+    ADDITIVE(2, "Additive", "Combines harmonic content with selective scaling and phase manipulation"),
+    HARMONIC(3, "Harmonic", "Uses sample data to modulate harmonic structure with frequency-dependent processing"),
+    FOLD(4, "Wave Folding", "Applies adaptive waveshaping with multiple folding thresholds and saturation"),
+    SPECTRAL(5, "Spectral", "Multi-band spectral processing with independent frequency transformations");
     
     private final int id;
     private final String name;
