@@ -71,8 +71,10 @@ The generated wavetables are automatically saved to your Vital wavetables direct
 To use your own audio samples for morphing:
 
 1. Place WAV files in the `sounds` directory
+   - You can organize samples in subdirectories (e.g., `sounds/drums/`, `sounds/vocals/`)
+   - The application will recursively scan all subdirectories for WAV files
 2. Choose the "Morph with Samples" or "Batch Morph Wavetables" option
-3. The application will randomly select and incorporate your samples
+3. The application will randomly select and incorporate your samples from any level of the directory structure
 
 ## Single-Cycle Wavetable Types
 

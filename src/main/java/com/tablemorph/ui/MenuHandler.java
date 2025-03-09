@@ -421,6 +421,7 @@ public class MenuHandler {
     
     /**
      * Gets the list of sound files from the sounds directory.
+     * Recursively traverses subdirectories to include all WAV files.
      * 
      * @return List of sound files
      */
@@ -430,7 +431,48 @@ public class MenuHandler {
             return new ArrayList<>();
         }
         
-        return Arrays.asList(soundsDir.listFiles(file -> 
-            file.isFile() && file.getName().toLowerCase().endsWith(".wav")));
+        List<File> wavFiles = new ArrayList<>();
+        System.out.println("\nScanning sounds directory and subdirectories for WAV files...");
+        collectWavFilesRecursively(soundsDir, wavFiles, 0);
+        System.out.println("Found " + wavFiles.size() + " WAV files in total.\n");
+        return wavFiles;
+    }
+    
+    /**
+     * Recursively collects all WAV files from a directory and its subdirectories.
+     * 
+     * @param directory The directory to search in
+     * @param wavFiles The list to populate with found WAV files
+     * @param depth Current recursion depth to prevent stack overflow on extremely deep directories
+     */
+    private void collectWavFilesRecursively(File directory, List<File> wavFiles, int depth) {
+        // Limit recursion depth to prevent stack overflow
+        if (depth > 20) {
+            System.out.println("Warning: Maximum directory depth reached at: " + directory.getPath());
+            return;
+        }
+        
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+        
+        int dirCount = 0;
+        int fileCount = 0;
+        
+        for (File file : files) {
+            if (file.isFile() && file.getName().toLowerCase().endsWith(".wav")) {
+                wavFiles.add(file);
+                fileCount++;
+            } else if (file.isDirectory()) {
+                dirCount++;
+                collectWavFilesRecursively(file, wavFiles, depth + 1);
+            }
+        }
+        
+        // Only log non-empty directories for better readability
+        if (fileCount > 0 || dirCount > 0) {
+            System.out.println("✓ Scanned: " + directory.getPath() + " (" + fileCount + " WAV files, " + dirCount + " subdirectories)");
+        }
     }
 } 
