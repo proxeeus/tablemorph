@@ -1,5 +1,7 @@
 package com.tablemorph.service;
 
+import com.tablemorph.service.cache.SoundFileCacheManager;
+
 /**
  * Factory class for creating service instances.
  * Uses the Singleton pattern to ensure only one instance of each service exists.
@@ -13,6 +15,7 @@ public class ServiceFactory {
     private final MultiFrameWavetableGenerator multiFrameGenerator;
     private final WavetableMorphService morphService;
     private final ExperimentalWaveformGenerator experimentalGenerator;
+    private final SoundFileCacheManager soundFileCacheManager;
     
     /**
      * Private constructor to prevent direct instantiation.
@@ -22,6 +25,7 @@ public class ServiceFactory {
         this.multiFrameGenerator = new MultiFrameWavetableGenerator();
         this.morphService = new WavetableMorphService();
         this.experimentalGenerator = new ExperimentalWaveformGenerator();
+        this.soundFileCacheManager = new SoundFileCacheManager();
     }
     
     /**
@@ -70,5 +74,14 @@ public class ServiceFactory {
      */
     public ExperimentalWaveformGenerator getExperimentalGenerator() {
         return experimentalGenerator;
+    }
+    
+    /**
+     * Gets the sound file cache manager.
+     * 
+     * @return The sound file cache manager
+     */
+    public SoundFileCacheManager getSoundFileCacheManager() {
+        return soundFileCacheManager;
     }
 } 

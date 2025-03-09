@@ -426,16 +426,8 @@ public class MenuHandler {
      * @return List of sound files
      */
     private List<File> getSoundFiles() {
-        File soundsDir = new File(SOUNDS_DIRECTORY);
-        if (!soundsDir.exists() || !soundsDir.isDirectory()) {
-            return new ArrayList<>();
-        }
-        
-        List<File> wavFiles = new ArrayList<>();
-        System.out.println("\nScanning sounds directory and subdirectories for WAV files...");
-        collectWavFilesRecursively(soundsDir, wavFiles, 0);
-        System.out.println("Found " + wavFiles.size() + " WAV files in total.\n");
-        return wavFiles;
+        ServiceFactory serviceFactory = ServiceFactory.getInstance();
+        return serviceFactory.getSoundFileCacheManager().getCachedSoundFiles();
     }
     
     /**
@@ -446,33 +438,7 @@ public class MenuHandler {
      * @param depth Current recursion depth to prevent stack overflow on extremely deep directories
      */
     private void collectWavFilesRecursively(File directory, List<File> wavFiles, int depth) {
-        // Limit recursion depth to prevent stack overflow
-        if (depth > 20) {
-            System.out.println("Warning: Maximum directory depth reached at: " + directory.getPath());
-            return;
-        }
-        
-        File[] files = directory.listFiles();
-        if (files == null) {
-            return;
-        }
-        
-        int dirCount = 0;
-        int fileCount = 0;
-        
-        for (File file : files) {
-            if (file.isFile() && file.getName().toLowerCase().endsWith(".wav")) {
-                wavFiles.add(file);
-                fileCount++;
-            } else if (file.isDirectory()) {
-                dirCount++;
-                collectWavFilesRecursively(file, wavFiles, depth + 1);
-            }
-        }
-        
-        // Only log non-empty directories for better readability
-        if (fileCount > 0 || dirCount > 0) {
-            System.out.println("✓ Scanned: " + directory.getPath() + " (" + fileCount + " WAV files, " + dirCount + " subdirectories)");
-        }
+        // This method is kept for backward compatibility but no longer used
+        // Sound file scanning is now handled by the SoundFileCacheManager
     }
 } 

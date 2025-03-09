@@ -11,6 +11,7 @@ import java.util.Properties;
  * - Single-cycle wavetable generation
  * - Sample morphing
  * - Vital integration
+ * - Sound file caching
  *
  * @author Proxeeus
  * @version 1.1
@@ -41,6 +42,10 @@ public class GeneratorConfig {
     
     // Whether to also save to Vital's directory
     private static final boolean DEFAULT_SAVE_TO_VITAL = true;
+    
+    // Sound file cache settings
+    private static final boolean DEFAULT_CACHE_ENABLED = true;
+    private static final int DEFAULT_CACHE_LIFETIME_MINUTES = 30;
     
     static {
         loadConfig();
@@ -90,6 +95,10 @@ public class GeneratorConfig {
         
         properties.setProperty("vital.wavetables.directory", defaultVitalDir);
         properties.setProperty("vital.save_to_vital", String.valueOf(DEFAULT_SAVE_TO_VITAL));
+        
+        // Set sound file cache settings
+        properties.setProperty("cache.enabled", String.valueOf(DEFAULT_CACHE_ENABLED));
+        properties.setProperty("cache.lifetime_minutes", String.valueOf(DEFAULT_CACHE_LIFETIME_MINUTES));
     }
     
     /**
@@ -300,6 +309,38 @@ public class GeneratorConfig {
     public static void setExperimentalWaveformProbability(double probability) {
         loadConfig();
         properties.setProperty("experimentalWaveformProbability", String.valueOf(probability));
+        saveConfig();
+    }
+    
+    /**
+     * Gets whether sound file caching is enabled.
+     */
+    public static boolean getCacheEnabled() {
+        return Boolean.parseBoolean(properties.getProperty("cache.enabled", 
+            String.valueOf(DEFAULT_CACHE_ENABLED)));
+    }
+    
+    /**
+     * Sets whether sound file caching is enabled.
+     */
+    public static void setCacheEnabled(boolean enabled) {
+        properties.setProperty("cache.enabled", String.valueOf(enabled));
+        saveConfig();
+    }
+    
+    /**
+     * Gets the lifetime of sound file cache entries in minutes.
+     */
+    public static int getCacheLifetimeMinutes() {
+        return Integer.parseInt(properties.getProperty("cache.lifetime_minutes", 
+            String.valueOf(DEFAULT_CACHE_LIFETIME_MINUTES)));
+    }
+    
+    /**
+     * Sets the lifetime of sound file cache entries in minutes.
+     */
+    public static void setCacheLifetimeMinutes(int minutes) {
+        properties.setProperty("cache.lifetime_minutes", String.valueOf(minutes));
         saveConfig();
     }
 } 

@@ -1,6 +1,7 @@
 package com.tablemorph.ui;
 
 import com.tablemorph.config.GeneratorConfig;
+import com.tablemorph.service.ServiceFactory;
 
 /**
  * Handles the configuration menu and settings.
@@ -19,7 +20,8 @@ public class ConfigurationMenuHandler {
                 "2. Single-Cycle Settings",
                 "3. Morphing Settings",
                 "4. Vital Integration",
-                "5. Back to Main Menu"
+                "5. Sound File Cache",
+                "6. Back to Main Menu"
             };
             
             for (String item : menuItems) {
@@ -45,6 +47,9 @@ public class ConfigurationMenuHandler {
                     configureVitalIntegration();
                     break;
                 case "5":
+                    configureSoundFileCache();
+                    break;
+                case "6":
                     return;
                 default:
                     System.out.println("\n[ERROR] Invalid choice. Please try again.");
@@ -274,6 +279,69 @@ public class ConfigurationMenuHandler {
                 break;
                 
             case "4":
+                return;
+                
+            default:
+                System.out.println("\n[ERROR] Invalid choice. Please try again.");
+        }
+        
+        TextUI.waitForEnter(null);
+    }
+    
+    /**
+     * Configures sound file cache settings.
+     */
+    private void configureSoundFileCache() {
+        TextUI.displayHeader("SOUND FILE CACHE");
+        
+        // Display current settings
+        boolean cacheEnabled = GeneratorConfig.getCacheEnabled();
+        int cacheLifetime = GeneratorConfig.getCacheLifetimeMinutes();
+        
+        System.out.println("\nCurrent Settings:");
+        System.out.println("1. Cache Enabled: " + (cacheEnabled ? "Yes" : "No"));
+        System.out.println("2. Cache Lifetime: " + cacheLifetime + " minutes");
+        System.out.println("3. View Cache Statistics");
+        System.out.println("4. Invalidate Cache");
+        System.out.println("5. Back to Configuration Menu");
+        
+        System.out.print("\nEnter your choice (1-5) > ");
+        String choice = TextUI.readLine();
+        
+        switch (choice) {
+            case "1":
+                boolean newValue = TextUI.readBoolean("\nEnable sound file cache?", cacheEnabled);
+                GeneratorConfig.setCacheEnabled(newValue);
+                System.out.println("[OK] Cache " + (newValue ? "enabled" : "disabled"));
+                break;
+                
+            case "2":
+                System.out.println("\nThe cache lifetime determines how long the cache is valid");
+                System.out.println("before it needs to be refreshed (in minutes).");
+                
+                int minutes = TextUI.readInt("\nEnter new cache lifetime (1-1440 minutes): ", 
+                                           1, 1440, cacheLifetime);
+                GeneratorConfig.setCacheLifetimeMinutes(minutes);
+                System.out.println("[OK] Cache lifetime updated to " + minutes + " minutes");
+                break;
+                
+            case "3":
+                System.out.println("\nCache Statistics:");
+                String stats = ServiceFactory.getInstance().getSoundFileCacheManager().getCacheStats();
+                System.out.println(stats);
+                break;
+                
+            case "4":
+                boolean confirm = TextUI.readBoolean("\nAre you sure you want to invalidate the cache?", false);
+                if (confirm) {
+                    ServiceFactory.getInstance().getSoundFileCacheManager().invalidateCache();
+                    System.out.println("[OK] Cache invalidated");
+                } else {
+                    System.out.println("[OK] Cache invalidation cancelled");
+                }
+                break;
+                
+            case "5":
                 return;
                 
             default:

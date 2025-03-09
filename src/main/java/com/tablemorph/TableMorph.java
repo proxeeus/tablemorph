@@ -1,6 +1,7 @@
 package com.tablemorph;
 
 import com.tablemorph.config.GeneratorConfig;
+import com.tablemorph.service.ServiceFactory;
 import com.tablemorph.ui.MenuHandler;
 import com.tablemorph.ui.TextUI;
 import com.tablemorph.util.DirectoryUtil;
@@ -28,6 +29,9 @@ public class TableMorph {
         // Initialize directories
         initializeDirectories();
         
+        // Initialize sound file cache
+        initializeSoundFileCache();
+        
         // Display logo
         TextUI.displayLogo();
         
@@ -44,5 +48,14 @@ public class TableMorph {
         DirectoryUtil.createSingleCycleDirectory();
         DirectoryUtil.createSoundsDirectory();
         DirectoryUtil.createMorphsDirectory();
+    }
+    
+    /**
+     * Initializes the sound file cache.
+     */
+    private static void initializeSoundFileCache() {
+        if (GeneratorConfig.getCacheEnabled()) {
+            ServiceFactory.getInstance().getSoundFileCacheManager().initializeCache();
+        }
     }
 } 

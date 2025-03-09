@@ -49,4 +49,7 @@ logs/
 *.bak
 *.swp
 *~.nib
-local.properties 
+local.properties
+
+# Sound file cache
+.soundscache 
