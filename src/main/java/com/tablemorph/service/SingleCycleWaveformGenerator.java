@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import com.tablemorph.config.GeneratorConfig;
 import com.tablemorph.model.WaveformType;
@@ -38,7 +39,19 @@ public class SingleCycleWaveformGenerator {
     public Path generateRandomSingleCycleWavetable() throws IOException {
         // Include experimental waveforms in the random selection
         int maxType = WaveformType.EXPERIMENTAL.getId() + 1;
-        return generateSingleCycleWavetable(random.nextInt(maxType), System.currentTimeMillis());
+        return generateSingleCycleWavetable(random.nextInt(maxType), generateUniqueSeed());
+    }
+    
+    /**
+     * Generates a unique seed that's highly unlikely to produce duplicate waveforms.
+     * 
+     * @return A unique long value for seeding random generators
+     */
+    private long generateUniqueSeed() {
+        // Create a more unique seed by combining current time with a random UUID
+        long timePart = System.currentTimeMillis();
+        long uuidPart = UUID.randomUUID().getMostSignificantBits();
+        return timePart ^ uuidPart; // XOR the two values for better distribution
     }
     
     /**
@@ -95,8 +108,8 @@ public class SingleCycleWaveformGenerator {
         List<Path> generatedFiles = new ArrayList<>();
         
         for (int i = 0; i < count; i++) {
-            // Generate a unique seed based on current time and iteration
-            long seed = System.currentTimeMillis() + i;
+            // Generate a unique seed that won't repeat even on fast systems
+            long seed = generateUniqueSeed();
             
             // Choose a random waveform type for each iteration
             int waveformType = random.nextInt(WaveformType.CUSTOM.getId());
@@ -105,11 +118,9 @@ public class SingleCycleWaveformGenerator {
             Path path = generateSingleCycleWavetable(waveformType, seed);
             generatedFiles.add(path);
             
-            // Brief pause between generations for better time-based seed uniqueness
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            // Output progress for larger batches
+            if (count > 5) {
+                System.out.println("Generated single-cycle wavetable " + (i+1) + "/" + count + ": " + path.getFileName());
             }
         }
         
@@ -127,8 +138,8 @@ public class SingleCycleWaveformGenerator {
         List<Path> generatedFiles = new ArrayList<>();
         
         for (int i = 0; i < count; i++) {
-            // Generate a unique seed based on current time and iteration
-            long seed = System.currentTimeMillis() + i;
+            // Generate a unique seed that won't repeat even on fast systems
+            long seed = generateUniqueSeed();
             
             // Generate the experimental wavetable
             Path path = generateSingleCycleWavetable(WaveformType.EXPERIMENTAL.getId(), seed);
@@ -136,13 +147,6 @@ public class SingleCycleWaveformGenerator {
             
             // Output progress
             System.out.println("Generated experimental wavetable " + (i+1) + "/" + count + ": " + path.getFileName());
-            
-            // Brief pause between generations for better time-based seed uniqueness
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
         }
         
         return generatedFiles;
@@ -236,12 +240,8 @@ public class SingleCycleWaveformGenerator {
      * Generates an experimental waveform.
      */
     private float[] generateExperimentalWaveform(int sampleCount, Random randomGenerator) {
-        // Create a new instance with the provided random seed
-        ExperimentalWaveformGenerator generator = new ExperimentalWaveformGenerator();
-        // The ExperimentalWaveformGenerator uses its own internal Random instance
-        
-        // Get the experimental waveform data
-        double[] waveformData = experimentalGenerator.generateExperimentalWaveform(sampleCount);
+        // Pass the provided seeded random generator to the experimental generator
+        double[] waveformData = experimentalGenerator.generateExperimentalWaveform(sampleCount, randomGenerator);
         
         // Convert double array to float array
         float[] waveform = new float[sampleCount];
